@@ -977,3 +977,330 @@ FRONTEND_URL=http://localhost:3000         # 前端地址
 cd apps/server && pnpm mastra dev
 # 打开 Mastra Studio，可直接测试每个 Agent 和 Workflow
 ```
+
+---
+
+## 十三、Cloudflare 部署方案
+
+前后端分开部署，均部署到 Cloudflare，实现一键部署。
+
+### 13.1 部署架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Cloudflare 全球边缘网络                  │
+│                                                         │
+│  ┌─────────────────┐       ┌──────────────────────┐     │
+│  │  Cloudflare      │       │  Cloudflare           │     │
+│  │  Workers         │  API  │  Workers              │     │
+│  │                  │ ───── │                        │     │
+│  │  Next.js 前端    │       │  Hono + Mastra 后端   │     │
+│  │  @opennextjs/    │       │  @mastra/deployer-    │     │
+│  │  cloudflare      │       │  cloudflare            │     │
+│  └─────────────────┘       └──────────┬───────────┘     │
+│                                       │                  │
+│                            ┌──────────┴───────────┐     │
+│                            │  Hyperdrive           │     │
+│                            │  (连接池代理)          │     │
+│                            └──────────┬───────────┘     │
+└───────────────────────────────────────┼─────────────────┘
+                                        │
+                             ┌──────────┴───────────┐
+                             │  Supabase             │
+                             │  PostgreSQL + Auth    │
+                             │  + Storage + pgvector │
+                             └──────────────────────┘
+```
+
+### 13.2 各服务部署目标
+
+| 服务 | 部署目标 | 工具 |
+|------|---------|------|
+| 前端 (Next.js) | Cloudflare Workers | `@opennextjs/cloudflare` |
+| 后端 (Hono + Mastra) | Cloudflare Workers | `@mastra/deployer-cloudflare` + `wrangler` |
+| 数据库连接 | Cloudflare Hyperdrive | 代理 Supabase PostgreSQL |
+| 数据库 | Supabase (外部) | PostgreSQL + pgvector |
+| 文件存储 | Supabase Storage (外部) | 教案/图片 |
+| 认证 | Supabase Auth (外部) | JWT 验证 |
+
+### 13.3 后端 Workers 配置
+
+```jsonc
+// apps/server/wrangler.jsonc
+{
+  "name": "physics-ai-tutor-api",
+  "main": "dist/index.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "<hyperdrive-config-id>"
+    }
+  ],
+  "vars": {
+    "FRONTEND_URL": "https://physics-ai-tutor.pages.dev"
+  },
+  // 敏感变量通过 wrangler secret 设置，不写在配置文件中
+  // wrangler secret put ZHIPU_API_KEY
+  // wrangler secret put DASHSCOPE_API_KEY
+  // wrangler secret put SUPABASE_URL
+  // wrangler secret put SUPABASE_ANON_KEY
+}
+```
+
+#### 后端数据库连接（通过 Hyperdrive）
+
+```typescript
+// apps/server/src/db/client.ts
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema';
+
+// 本地开发：直接连 Supabase
+// 生产环境：通过 Hyperdrive 连接池
+export function createDb(env?: { HYPERDRIVE?: { connectionString: string } }) {
+  const connectionString = env?.HYPERDRIVE?.connectionString
+    || process.env.SUPABASE_DATABASE_URL!;
+
+  const client = postgres(connectionString, {
+    prepare: false, // Hyperdrive 事务模式不支持 prepared statements
+  });
+
+  return drizzle(client, { schema });
+}
+```
+
+#### 后端入口适配 Workers
+
+```typescript
+// apps/server/src/index.ts
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { createDb } from './db/client';
+
+type Bindings = {
+  HYPERDRIVE: { connectionString: string };
+  ZHIPU_API_KEY: string;
+  DASHSCOPE_API_KEY: string;
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+  FRONTEND_URL: string;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+// 每个请求中初始化 DB（Workers 不能在全局作用域访问 bindings）
+app.use('*', async (c, next) => {
+  const db = createDb(c.env);
+  c.set('db', db);
+  await next();
+});
+
+app.use('*', cors({ origin: (origin, c) => c.env.FRONTEND_URL }));
+
+// ... 路由注册
+
+export default app;
+```
+
+### 13.4 前端 Workers 配置
+
+```jsonc
+// apps/web/wrangler.jsonc
+{
+  "name": "physics-ai-tutor-web",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "NEXT_PUBLIC_API_URL": "https://physics-ai-tutor-api.<account>.workers.dev"
+  }
+}
+```
+
+#### open-next 配置
+
+```typescript
+// apps/web/open-next.config.ts
+import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+
+export default defineCloudflareConfig({});
+```
+
+#### Next.js 配置
+
+```typescript
+// apps/web/next.config.ts
+const nextConfig = {
+  // 关闭 Image Optimization（Workers 不支持）
+  images: {
+    unoptimized: true,
+  },
+};
+export default nextConfig;
+```
+
+### 13.5 Hyperdrive 配置
+
+```bash
+# 创建 Hyperdrive 连接到 Supabase PostgreSQL
+# 使用 Supabase 的 Direct 连接串（非 Pooled）
+wrangler hyperdrive create physics-ai-tutor-db \
+  --connection-string="postgresql://postgres.xxx:password@db.xxx.supabase.co:5432/postgres"
+
+# 输出的 id 填入 wrangler.jsonc 的 hyperdrive.id
+```
+
+### 13.6 一键部署脚本
+
+```bash
+#!/bin/bash
+# scripts/deploy.sh — 一键部署前后端到 Cloudflare
+
+set -e
+
+echo "🚀 Physics AI Tutor - Cloudflare 部署"
+echo "======================================"
+
+# 1. 安装依赖
+echo "📦 安装依赖..."
+pnpm install
+
+# 2. 构建共享包
+echo "📦 构建 shared 包..."
+pnpm --filter @physics-ai-tutor/shared build
+
+# 3. 部署后端
+echo "🔧 部署后端 (Cloudflare Workers)..."
+pnpm --filter @physics-ai-tutor/server deploy
+
+# 4. 部署前端
+echo "🎨 部署前端 (Cloudflare Workers)..."
+pnpm --filter @physics-ai-tutor/web deploy
+
+echo ""
+echo "✅ 部署完成！"
+echo "  前端: https://physics-ai-tutor-web.<account>.workers.dev"
+echo "  后端: https://physics-ai-tutor-api.<account>.workers.dev"
+```
+
+#### 各 package.json 中的 deploy 脚本
+
+```jsonc
+// apps/server/package.json
+{
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:secrets": "wrangler secret put ZHIPU_API_KEY && wrangler secret put DASHSCOPE_API_KEY && wrangler secret put SUPABASE_URL && wrangler secret put SUPABASE_ANON_KEY"
+  }
+}
+
+// apps/web/package.json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "npx @opennextjs/cloudflare build",
+    "preview": "wrangler dev",
+    "deploy": "npx @opennextjs/cloudflare build && wrangler deploy"
+  }
+}
+```
+
+### 13.7 环境变量管理
+
+| 变量 | 存放位置 | 说明 |
+|------|---------|------|
+| `ZHIPU_API_KEY` | `wrangler secret` | 智谱 API Key |
+| `DASHSCOPE_API_KEY` | `wrangler secret` | 阿里百炼 API Key |
+| `SUPABASE_URL` | `wrangler secret` | Supabase URL |
+| `SUPABASE_ANON_KEY` | `wrangler secret` | Supabase Key |
+| `FRONTEND_URL` | `wrangler.jsonc vars` | 前端域名（CORS） |
+| `NEXT_PUBLIC_API_URL` | `wrangler.jsonc vars` | 后端 API 地址 |
+
+敏感变量一律用 `wrangler secret put` 设置，不进代码仓库。
+
+### 13.8 自定义域名（可选）
+
+```bash
+# 绑定自定义域名
+# 前端
+wrangler domains add physics-ai-tutor-web app.physics-tutor.com
+
+# 后端
+wrangler domains add physics-ai-tutor-api api.physics-tutor.com
+```
+
+部署后访问：
+- 前端：`https://app.physics-tutor.com`
+- 后端 API：`https://api.physics-tutor.com`
+
+### 13.9 注意事项与限制
+
+| 限制 | 影响 | 应对方案 |
+|------|------|---------|
+| Workers 无文件系统 | 不能用本地文件存储 | 文件存 Supabase Storage |
+| Workers 无直连 TCP | 不能直连 PostgreSQL | 通过 Hyperdrive 代理 |
+| Hyperdrive 事务模式 | 不支持 prepared statements | Drizzle/postgres.js 设置 `prepare: false` |
+| Workers 全局作用域限制 | bindings 不能在模块初始化时访问 | 在请求处理函数中初始化 DB/Mastra |
+| Next.js Image Optimization | Workers 不支持 | 设置 `images: { unoptimized: true }` |
+| Workers CPU 时间限制 | 付费版 30s / 免费版 10ms | AI 出题用 streaming，避免超时 |
+| Workers 内存限制 128MB | 大文件解析受限 | 大文件上传直传 Supabase Storage |
+
+### 13.10 CI/CD（GitHub Actions）
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-server:
+    runs-on: ubuntu-latest
+    name: Deploy Backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm --filter @physics-ai-tutor/shared build
+      - run: pnpm --filter @physics-ai-tutor/server deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-web:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend
+    needs: deploy-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm --filter @physics-ai-tutor/shared build
+      - run: pnpm --filter @physics-ai-tutor/web deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+```
+
+GitHub 仓库需设置的 Secrets：
+- `CLOUDFLARE_API_TOKEN` — Cloudflare API Token（需要 Workers 编辑权限）
+- `CLOUDFLARE_ACCOUNT_ID` — Cloudflare 账号 ID
