@@ -13,7 +13,8 @@
 | 前端 | Next.js 15 + Tailwind CSS + shadcn/ui | App Router, RSC |
 | UI 补充 | KaTeX（公式渲染）+ Recharts（图表） | 物理公式 + 学情曲线 |
 | 后端 | Hono + Mastra + Drizzle ORM | 轻量 TS 后端 + AI Agent |
-| 数据库 | Supabase（PostgreSQL + Auth + Storage + pgvector） | 一站式 BaaS |
+| 数据库 | Supabase（PostgreSQL + Auth + pgvector） | 认证 + 数据库 |
+| 文件存储 | Cloudflare R2 | 10GB 免费，零出口费，Workers binding |
 | AI 对话模型 | 智谱 GLM-4-Flash（开发期，永久免费） | Mastra 内置 zhipuai provider |
 | Embedding 模型 | 阿里百炼 text-embedding-v3（免费额度） | OpenAI 兼容接口 |
 | 向量搜索 | pgvector（Supabase 内置） | 教案/题库语义检索 |
@@ -888,7 +889,7 @@ const reader = response.body.getReader();
 | 功能 | Supabase 服务 | 用途 |
 |------|-------------|------|
 | 用户认证 | Auth | 教师/学生注册登录，JWT token |
-| 文件存储 | Storage | 教案PDF/Word、学生答题图片 |
+| 文件存储 | Cloudflare R2（见 9.1） | 教案PDF/Word、学生答题图片 |
 | 数据库 | PostgreSQL | 所有业务数据（通过 Drizzle ORM 操作） |
 | 向量搜索 | pgvector 扩展 | 教案/题库语义检索 |
 | 实时通知 | Realtime | 成绩发布通知学生（可选） |
@@ -896,16 +897,29 @@ const reader = response.body.getReader();
 
 ---
 
-## 9.1 文件存储方案
+## 9.1 文件存储方案（Cloudflare R2）
 
-### Bucket 划分
+### 为什么选 R2 而不是 Supabase Storage
+
+| | Supabase Storage | Cloudflare R2 |
+|--|----------------|---------------|
+| 免费存储 | 1 GB | **10 GB** |
+| 出口流量 | 2 GB/月 | **无限免费** |
+| 和 Workers 集成 | 需走外网请求 | **直接 binding，零延迟** |
+| 超出价格 | $0.021/GB | $0.015/GB |
+| S3 兼容 | ❌ | ✅ |
+| 自定义域名 | ❌ | ✅ |
+
+R2 和 Workers 同属 Cloudflare 生态，通过 binding 直接访问，不经过公网，零延迟零出口费。
+
+### R2 Bucket 划分
 
 | Bucket 名称 | 用途 | 访问权限 | 文件类型 |
 |-------------|------|---------|---------|
 | `lesson-plans` | 教师上传的教案 | 教师私有（仅上传者可访问） | PDF, DOCX, PPTX |
 | `question-banks` | 教师上传的题库文件 | 教师私有 | PDF, DOCX, XLSX |
 | `student-uploads` | 学生答题时上传的图片（解题步骤、草稿） | 学生私有 + 对应教师可读 | PNG, JPG, JPEG |
-| `exports` | 系统生成的导出文件（试卷PDF、成绩报告） | 教师私有，按需生成临时链接 | PDF, DOCX |
+| `exports` | 系统生成的导出文件（试卷PDF、成绩报告） | 教师私有，临时签名 URL | PDF, DOCX |
 | `avatars` | 用户头像 | 公开读 | PNG, JPG, JPEG |
 
 ### 文件限制
@@ -919,177 +933,339 @@ const reader = response.body.getReader();
 | 允许题库格式 | `.pdf` `.docx` `.xlsx` | 含 Excel 批量导入 |
 | 允许图片格式 | `.png` `.jpg` `.jpeg` | 学生答题 + 头像 |
 
-### 上传流程（前端直传 Supabase Storage）
+### R2 免费额度明细
 
-Workers 没有文件系统，不适合做文件中转。采用**前端直传**方案：
+| 项目 | 免费额度 | 超出价格 |
+|------|---------|---------|
+| 存储 | 10 GB/月 | $0.015/GB/月 |
+| A 类操作（写入/列表） | 100 万次/月 | $4.50/百万次 |
+| B 类操作（读取） | 1000 万次/月 | $0.36/百万次 |
+| 出口流量 | **无限免费** | $0 |
 
-```
-前端                        Supabase Storage                后端 Workers
-  │                              │                             │
-  │  1. 请求上传凭证              │                             │
-  │  ────────────────────────────────────────────────────────→ │
-  │                              │        2. 校验权限+生成路径   │
-  │  ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
-  │  { bucket, path, token }     │                             │
-  │                              │                             │
-  │  3. 直传文件到 Storage        │                             │
-  │  ──────────────────────────→ │                             │
-  │                              │  ← 200 OK                   │
-  │                              │                             │
-  │  4. 通知后端上传完成          │                             │
-  │  ────────────────────────────────────────────────────────→ │
-  │                              │     5. 记录DB + 触发解析      │
-  │                              │     ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
-  │  ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
-```
+**按项目估算**：5 个教师 + 200 学生用一学期 ≈ 2-3 GB 存储 + 几十万次读写，完全在免费范围内。
 
-#### 前端上传代码
+### Wrangler R2 配置
 
-```typescript
-// apps/web/lib/upload.ts
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
-
-export async function uploadLessonPlan(file: File, teacherId: string) {
-  // 1. 校验文件格式和大小
-  const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
-  if (!allowedTypes.includes(file.type)) throw new Error('不支持的文件格式');
-  if (file.size > 20 * 1024 * 1024) throw new Error('文件不能超过20MB');
-
-  // 2. 生成唯一路径：{teacherId}/{timestamp}_{filename}
-  const path = `${teacherId}/${Date.now()}_${file.name}`;
-
-  // 3. 直传到 Supabase Storage
-  const { data, error } = await supabase.storage
-    .from('lesson-plans')
-    .upload(path, file, {
-      contentType: file.type,
-      upsert: false,
-    });
-
-  if (error) throw error;
-
-  // 4. 获取公开 URL
-  const { data: { publicUrl } } = supabase.storage
-    .from('lesson-plans')
-    .getPublicUrl(path);
-
-  // 5. 通知后端记录 + 触发解析
-  const response = await fetch('/api/upload/lesson-plan', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title: file.name,
-      fileUrl: publicUrl,
-      fileType: file.name.split('.').pop(),
-      storagePath: path,
-    }),
-  });
-
-  return response.json();
+```jsonc
+// apps/server/wrangler.jsonc（追加 R2 binding）
+{
+  "r2_buckets": [
+    { "binding": "LESSON_PLANS", "bucket_name": "lesson-plans" },
+    { "binding": "QUESTION_BANKS", "bucket_name": "question-banks" },
+    { "binding": "STUDENT_UPLOADS", "bucket_name": "student-uploads" },
+    { "binding": "EXPORTS", "bucket_name": "exports" },
+    { "binding": "AVATARS", "bucket_name": "avatars" }
+  ]
 }
 ```
 
-#### 后端处理上传回调
+创建 Bucket：
+```bash
+wrangler r2 bucket create lesson-plans
+wrangler r2 bucket create question-banks
+wrangler r2 bucket create student-uploads
+wrangler r2 bucket create exports
+wrangler r2 bucket create avatars
+```
+
+### 上传流程（前端 → 后端 Worker → R2）
+
+R2 没有像 Supabase Storage 那样的客户端 SDK 直传，采用**后端 Presigned URL**方案：
+
+```
+前端                          后端 Workers                     R2
+  │                              │                             │
+  │  1. 请求上传 URL              │                             │
+  │  POST /api/upload/presign    │                             │
+  │  ──────────────────────────→ │                             │
+  │                              │  2. 校验权限                 │
+  │                              │  3. 生成 presigned URL       │
+  │  ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │                             │
+  │  { uploadUrl, fileKey }      │                             │
+  │                              │                             │
+  │  4. PUT 文件到 presigned URL  │                             │
+  │  ──────────────────────────────────────────────────────── → │
+  │                              │                   ← 200 OK  │
+  │                              │                             │
+  │  5. 确认上传完成              │                             │
+  │  POST /api/upload/confirm    │                             │
+  │  ──────────────────────────→ │                             │
+  │                              │  6. 记录DB + 触发解析        │
+  │  ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │                             │
+```
+
+### 后端类型定义
+
+```typescript
+// apps/server/src/index.ts
+type Bindings = {
+  // 数据库
+  HYPERDRIVE: { connectionString: string };
+  // R2 Buckets
+  LESSON_PLANS: R2Bucket;
+  QUESTION_BANKS: R2Bucket;
+  STUDENT_UPLOADS: R2Bucket;
+  EXPORTS: R2Bucket;
+  AVATARS: R2Bucket;
+  // Secrets
+  ZHIPU_API_KEY: string;
+  DASHSCOPE_API_KEY: string;
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+  FRONTEND_URL: string;
+};
+```
+
+### 后端上传接口
 
 ```typescript
 // apps/server/src/routes/upload.ts
 import { Hono } from 'hono';
 import { requireRole } from '../middleware/role';
+import { AwsClient } from 'aws4fetch'; // R2 presigned URL 生成
 
 const app = new Hono();
 
-// 教案上传回调 → 记录DB + 触发解析 Workflow
-app.post('/lesson-plan', requireRole('teacher'), async (c) => {
+// ─── Presigned URL 上传（教案） ───
+
+app.post('/presign', requireRole('teacher'), async (c) => {
   const profile = c.get('profile');
-  const body = await c.req.json();
+  const { filename, contentType, bucket } = await c.req.json();
+
+  // 1. 校验文件格式
+  const allowedBuckets = ['lesson-plans', 'question-banks'];
+  if (!allowedBuckets.includes(bucket)) {
+    return c.json({ error: 'Invalid bucket' }, 400);
+  }
+
+  // 2. 生成唯一 key：{userId}/{timestamp}_{filename}
+  const fileKey = `${profile.id}/${Date.now()}_${filename}`;
+
+  // 3. 生成 presigned URL（有效期 10 分钟）
+  const r2 = new AwsClient({
+    accessKeyId: c.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: c.env.R2_SECRET_ACCESS_KEY,
+  });
+
+  const url = new URL(`https://${c.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${bucket}/${fileKey}`);
+  url.searchParams.set('X-Amz-Expires', '600');
+
+  const signed = await r2.sign(new Request(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+  }), { aws: { signQuery: true } });
+
+  return c.json({
+    uploadUrl: signed.url,
+    fileKey,
+  });
+});
+
+// ─── 小文件直接通过 Worker 上传到 R2（备选方案） ───
+
+app.post('/direct', requireRole('teacher', 'student'), async (c) => {
+  const profile = c.get('profile');
+  const formData = await c.req.formData();
+  const file = formData.get('file') as File;
+  const bucket = formData.get('bucket') as string;
+
+  if (!file) return c.json({ error: 'No file' }, 400);
+  if (file.size > 20 * 1024 * 1024) return c.json({ error: 'File too large' }, 400);
+
+  // 选择 R2 bucket
+  const r2Bucket = getBucket(c.env, bucket);
+  if (!r2Bucket) return c.json({ error: 'Invalid bucket' }, 400);
+
+  const fileKey = `${profile.id}/${Date.now()}_${file.name}`;
+
+  // 直接写入 R2（通过 binding，零延迟）
+  await r2Bucket.put(fileKey, file.stream(), {
+    httpMetadata: { contentType: file.type },
+    customMetadata: { uploadedBy: profile.id, originalName: file.name },
+  });
+
+  return c.json({ fileKey, fileUrl: `/api/files/${bucket}/${fileKey}` });
+});
+
+// ─── 上传确认 → 记录DB + 触发解析 ───
+
+app.post('/confirm', requireRole('teacher'), async (c) => {
+  const profile = c.get('profile');
+  const { fileKey, bucket, title, fileType } = await c.req.json();
   const db = c.get('db');
 
-  // 1. 存入 documents 表
   const [doc] = await db.insert(documents).values({
     teacherId: profile.id,
-    title: body.title,
-    fileUrl: body.fileUrl,
-    fileType: body.fileType,
+    title,
+    fileUrl: fileKey,       // 存 R2 key，不存完整 URL
+    fileType,
   }).returning();
 
-  // 2. 异步触发教案解析 Workflow（不阻塞响应）
+  // 异步触发教案解析 Workflow
   const workflow = mastra.getWorkflow('parseLessonPlan');
   workflow.execute({
     documentId: doc.id,
-    fileUrl: body.fileUrl,
-    fileType: body.fileType,
-  }).catch(console.error); // 后台执行
+    fileKey,
+    bucket,
+    fileType,
+  }).catch(console.error);
 
   return c.json({ id: doc.id, status: 'parsing' });
 });
 
-// 学生答题图片上传回调
-app.post('/student-image', requireRole('student'), async (c) => {
+// ─── 文件读取（权限控制在应用层） ───
+
+app.get('/files/:bucket/:key{.+}', async (c) => {
   const profile = c.get('profile');
-  const body = await c.req.json();
-  // 记录图片 URL 关联到答案
-  return c.json({ imageUrl: body.fileUrl });
+  const bucket = c.req.param('bucket');
+  const key = c.req.param('key');
+
+  // 权限校验：文件 key 以用户 ID 开头才允许访问
+  // 教师可访问本班学生的文件
+  if (!await canAccessFile(profile, bucket, key, c.get('db'))) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  const r2Bucket = getBucket(c.env, bucket);
+  const object = await r2Bucket.get(key);
+
+  if (!object) return c.json({ error: 'Not found' }, 404);
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'Cache-Control': 'private, max-age=3600',
+    },
+  });
 });
+
+// ─── 辅助函数 ───
+
+function getBucket(env: Bindings, name: string): R2Bucket | null {
+  const map: Record<string, R2Bucket> = {
+    'lesson-plans': env.LESSON_PLANS,
+    'question-banks': env.QUESTION_BANKS,
+    'student-uploads': env.STUDENT_UPLOADS,
+    'exports': env.EXPORTS,
+    'avatars': env.AVATARS,
+  };
+  return map[name] || null;
+}
+
+async function canAccessFile(profile, bucket, key, db): Promise<boolean> {
+  const ownerId = key.split('/')[0];
+
+  // 自己的文件：直接允许
+  if (ownerId === profile.id) return true;
+
+  // 教师访问学生文件：校验是否本班学生
+  if (profile.role === 'teacher' && bucket === 'student-uploads') {
+    const isClassStudent = await db.query.classStudents.findFirst({
+      where: and(
+        eq(classStudents.studentId, ownerId),
+        inArray(classStudents.classId,
+          db.select({ id: classes.id }).from(classes)
+            .where(eq(classes.teacherId, profile.id))
+        ),
+      ),
+    });
+    return !!isClassStudent;
+  }
+
+  // 头像：公开读
+  if (bucket === 'avatars') return true;
+
+  return false;
+}
 
 export { app as uploadRoutes };
 ```
 
-### Supabase Storage 权限策略（RLS）
+### 前端上传代码
 
-```sql
--- lesson-plans bucket: 教师只能上传和访问自己的文件
-CREATE POLICY "Teachers upload own lesson plans"
-  ON storage.objects FOR INSERT
-  WITH CHECK (
-    bucket_id = 'lesson-plans'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+```typescript
+// apps/web/lib/upload.ts
 
-CREATE POLICY "Teachers read own lesson plans"
-  ON storage.objects FOR SELECT
-  USING (
-    bucket_id = 'lesson-plans'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
--- student-uploads bucket: 学生只能上传自己的文件
-CREATE POLICY "Students upload own files"
-  ON storage.objects FOR INSERT
-  WITH CHECK (
-    bucket_id = 'student-uploads'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+export async function uploadLessonPlan(file: File, token: string) {
+  // 1. 校验
+  const allowedExts = ['.pdf', '.docx', '.pptx'];
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+  if (!allowedExts.includes(ext)) throw new Error('不支持的文件格式');
+  if (file.size > 20 * 1024 * 1024) throw new Error('文件不能超过20MB');
 
--- student-uploads: 教师可以读取本班学生的文件
-CREATE POLICY "Teachers read class student files"
-  ON storage.objects FOR SELECT
-  USING (
-    bucket_id = 'student-uploads'
-    AND (storage.foldername(name))[1] IN (
-      SELECT student_id::text FROM class_students
-      WHERE class_id IN (
-        SELECT id FROM classes WHERE teacher_id = auth.uid()
-      )
-    )
-  );
+  // 2. 获取 presigned URL
+  const presignRes = await fetch(`${API_URL}/api/upload/presign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      filename: file.name,
+      contentType: file.type,
+      bucket: 'lesson-plans',
+    }),
+  });
+  const { uploadUrl, fileKey } = await presignRes.json();
 
--- avatars bucket: 公开读，仅本人写
-CREATE POLICY "Anyone can read avatars"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'avatars');
+  // 3. 直传到 R2
+  await fetch(uploadUrl, {
+    method: 'PUT',
+    body: file,
+    headers: { 'Content-Type': file.type },
+  });
 
-CREATE POLICY "Users upload own avatar"
-  ON storage.objects FOR INSERT
-  WITH CHECK (
-    bucket_id = 'avatars'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+  // 4. 通知后端确认
+  const confirmRes = await fetch(`${API_URL}/api/upload/confirm`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      fileKey,
+      bucket: 'lesson-plans',
+      title: file.name,
+      fileType: ext.slice(1),
+    }),
+  });
+
+  return confirmRes.json();
+}
+
+// 学生上传答题图片（小文件直传 Worker）
+export async function uploadStudentImage(file: File, token: string) {
+  if (file.size > 5 * 1024 * 1024) throw new Error('图片不能超过5MB');
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('bucket', 'student-uploads');
+
+  const res = await fetch(`${API_URL}/api/upload/direct`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData,
+  });
+
+  return res.json();
+}
 ```
+
+### 文件权限控制
+
+R2 没有 Supabase RLS，**权限控制在应用层实现**：
+
+| 文件操作 | 权限规则 |
+|---------|---------|
+| 上传教案/题库 | 仅教师，key 以 `{teacherId}/` 开头 |
+| 上传答题图片 | 仅学生，key 以 `{studentId}/` 开头 |
+| 上传头像 | 所有用户，key 以 `{userId}/` 开头 |
+| 读取自己的文件 | key 前缀匹配 `{userId}/` |
+| 教师读取学生文件 | 校验学生是否在教师的班级中 |
+| 公开读头像 | avatars bucket 所有人可读 |
+| 导出文件 | 生成临时签名 URL（1 小时过期） |
 
 ### 文档解析方案
 
@@ -1107,15 +1283,20 @@ CREATE POLICY "Users upload own avatar"
 
 #### Workers 环境适配
 
-`pdf-parse` 和 `mammoth` 均为纯 JS 实现，**不依赖 Node.js fs**，可在 Workers 中运行。解析流程：
+`pdf-parse` 和 `mammoth` 均为纯 JS 实现，**不依赖 Node.js fs**，可在 Workers 中运行。解析时直接从 R2 读取：
 
 ```typescript
 // apps/server/src/services/document-parser.ts
 
-export async function parseDocument(fileUrl: string, fileType: string): Promise<string> {
-  // 1. 从 Supabase Storage 下载文件到内存（ArrayBuffer）
-  const response = await fetch(fileUrl);
-  const buffer = await response.arrayBuffer();
+export async function parseDocument(
+  r2Bucket: R2Bucket,
+  fileKey: string,
+  fileType: string,
+): Promise<string> {
+  // 1. 从 R2 读取文件（通过 binding，零延迟，不走公网）
+  const object = await r2Bucket.get(fileKey);
+  if (!object) throw new Error('File not found in R2');
+  const buffer = await object.arrayBuffer();
 
   // 2. 根据格式解析
   switch (fileType) {
@@ -1130,7 +1311,6 @@ export async function parseDocument(fileUrl: string, fileType: string): Promise<
       return result.value;
     }
     case 'pptx': {
-      // 自定义 PPTX 解析（解压 ZIP → 读取 slide XML → 提取文本）
       return await parsePptx(buffer);
     }
     default:
@@ -1143,6 +1323,12 @@ export async function parseDocument(fileUrl: string, fileType: string): Promise<
 
 ```
 教案文件（PDF/DOCX/PPTX）
+  │
+  ▼
+前端上传 → R2 (lesson-plans bucket)
+  │
+  ▼
+后端从 R2 读取（binding，零延迟）
   │
   ▼
 文档解析 → 纯文本
@@ -1173,9 +1359,15 @@ export async function parseDocument(fileUrl: string, fileType: string): Promise<
 | 场景 | 策略 |
 |------|------|
 | 导出文件（试卷PDF） | 生成签名 URL（有效期 1 小时），过期自动失效 |
-| 删除教案 | 同步删除 Storage 文件 + document_chunks 向量 |
+| 删除教案 | 同步删除 R2 文件 + document_chunks 向量 |
 | 学生退出班级 | 保留答题图片（成绩记录需要） |
 | 教师删除账号 | 标记 disabled，文件保留 90 天后清理 |
+| R2 生命周期规则 | exports bucket 设置 7 天自动清理 |
+
+```bash
+# 设置 exports bucket 自动清理（7天过期）
+wrangler r2 bucket lifecycle set exports --rules '[{"id":"auto-cleanup","enabled":true,"conditions":{"age":7},"action":"Delete"}]'
+```
 
 ---
 
@@ -1303,7 +1495,7 @@ cd apps/server && pnpm mastra dev
 | 后端 (Hono + Mastra) | Cloudflare Workers | `@mastra/deployer-cloudflare` + `wrangler` |
 | 数据库连接 | Cloudflare Hyperdrive | 代理 Supabase PostgreSQL |
 | 数据库 | Supabase (外部) | PostgreSQL + pgvector |
-| 文件存储 | Supabase Storage (外部) | 教案/图片 |
+| 文件存储 | Cloudflare R2 | 教案/图片（binding 直连，零延迟） |
 | 认证 | Supabase Auth (外部) | JWT 验证 |
 
 ### 13.3 后端 Workers 配置
@@ -1324,14 +1516,23 @@ cd apps/server && pnpm mastra dev
       "id": "<hyperdrive-config-id>"
     }
   ],
+  "r2_buckets": [
+    { "binding": "LESSON_PLANS", "bucket_name": "lesson-plans" },
+    { "binding": "QUESTION_BANKS", "bucket_name": "question-banks" },
+    { "binding": "STUDENT_UPLOADS", "bucket_name": "student-uploads" },
+    { "binding": "EXPORTS", "bucket_name": "exports" },
+    { "binding": "AVATARS", "bucket_name": "avatars" }
+  ],
   "vars": {
     "FRONTEND_URL": "https://physics-ai-tutor.pages.dev"
-  },
+  }
   // 敏感变量通过 wrangler secret 设置，不写在配置文件中
   // wrangler secret put ZHIPU_API_KEY
   // wrangler secret put DASHSCOPE_API_KEY
   // wrangler secret put SUPABASE_URL
   // wrangler secret put SUPABASE_ANON_KEY
+  // wrangler secret put R2_ACCESS_KEY_ID
+  // wrangler secret put R2_SECRET_ACCESS_KEY
 }
 ```
 
@@ -1482,7 +1683,7 @@ echo "  后端: https://physics-ai-tutor-api.<account>.workers.dev"
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "deploy:secrets": "wrangler secret put ZHIPU_API_KEY && wrangler secret put DASHSCOPE_API_KEY && wrangler secret put SUPABASE_URL && wrangler secret put SUPABASE_ANON_KEY"
+    "deploy:secrets": "wrangler secret put ZHIPU_API_KEY && wrangler secret put DASHSCOPE_API_KEY && wrangler secret put SUPABASE_URL && wrangler secret put SUPABASE_ANON_KEY && wrangler secret put R2_ACCESS_KEY_ID && wrangler secret put R2_SECRET_ACCESS_KEY"
   }
 }
 
@@ -1505,6 +1706,9 @@ echo "  后端: https://physics-ai-tutor-api.<account>.workers.dev"
 | `DASHSCOPE_API_KEY` | `wrangler secret` | 阿里百炼 API Key |
 | `SUPABASE_URL` | `wrangler secret` | Supabase URL |
 | `SUPABASE_ANON_KEY` | `wrangler secret` | Supabase Key |
+| `R2_ACCESS_KEY_ID` | `wrangler secret` | R2 API Key（presigned URL 用） |
+| `R2_SECRET_ACCESS_KEY` | `wrangler secret` | R2 API Secret |
+| `R2_ACCOUNT_ID` | `wrangler secret` | Cloudflare 账号 ID |
 | `FRONTEND_URL` | `wrangler.jsonc vars` | 前端域名（CORS） |
 | `NEXT_PUBLIC_API_URL` | `wrangler.jsonc vars` | 后端 API 地址 |
 
@@ -1529,7 +1733,7 @@ wrangler domains add physics-ai-tutor-api api.physics-tutor.com
 
 | 限制 | 影响 | 应对方案 |
 |------|------|---------|
-| Workers 无文件系统 | 不能用本地文件存储 | 文件存 Supabase Storage |
+| Workers 无文件系统 | 不能用本地文件存储 | 文件存 Cloudflare R2（binding 直连） |
 | Workers 无直连 TCP | 不能直连 PostgreSQL | 通过 Hyperdrive 代理 |
 | Hyperdrive 事务模式 | 不支持 prepared statements | Drizzle/postgres.js 设置 `prepare: false` |
 | Workers 全局作用域限制 | bindings 不能在模块初始化时访问 | 在请求处理函数中初始化 DB/Mastra |
