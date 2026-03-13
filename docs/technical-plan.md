@@ -896,6 +896,289 @@ const reader = response.body.getReader();
 
 ---
 
+## 9.1 文件存储方案
+
+### Bucket 划分
+
+| Bucket 名称 | 用途 | 访问权限 | 文件类型 |
+|-------------|------|---------|---------|
+| `lesson-plans` | 教师上传的教案 | 教师私有（仅上传者可访问） | PDF, DOCX, PPTX |
+| `question-banks` | 教师上传的题库文件 | 教师私有 | PDF, DOCX, XLSX |
+| `student-uploads` | 学生答题时上传的图片（解题步骤、草稿） | 学生私有 + 对应教师可读 | PNG, JPG, JPEG |
+| `exports` | 系统生成的导出文件（试卷PDF、成绩报告） | 教师私有，按需生成临时链接 | PDF, DOCX |
+| `avatars` | 用户头像 | 公开读 | PNG, JPG, JPEG |
+
+### 文件限制
+
+| 限制项 | 值 | 说明 |
+|-------|---|------|
+| 单文件最大 | 20MB | 教案 PDF 一般 < 5MB，预留余量 |
+| 图片最大 | 5MB | 学生上传答题图片 |
+| 头像最大 | 2MB | 裁剪后上传 |
+| 允许教案格式 | `.pdf` `.docx` `.pptx` | 一期支持三种 |
+| 允许题库格式 | `.pdf` `.docx` `.xlsx` | 含 Excel 批量导入 |
+| 允许图片格式 | `.png` `.jpg` `.jpeg` | 学生答题 + 头像 |
+
+### 上传流程（前端直传 Supabase Storage）
+
+Workers 没有文件系统，不适合做文件中转。采用**前端直传**方案：
+
+```
+前端                        Supabase Storage                后端 Workers
+  │                              │                             │
+  │  1. 请求上传凭证              │                             │
+  │  ────────────────────────────────────────────────────────→ │
+  │                              │        2. 校验权限+生成路径   │
+  │  ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
+  │  { bucket, path, token }     │                             │
+  │                              │                             │
+  │  3. 直传文件到 Storage        │                             │
+  │  ──────────────────────────→ │                             │
+  │                              │  ← 200 OK                   │
+  │                              │                             │
+  │  4. 通知后端上传完成          │                             │
+  │  ────────────────────────────────────────────────────────→ │
+  │                              │     5. 记录DB + 触发解析      │
+  │                              │     ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
+  │  ← ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │
+```
+
+#### 前端上传代码
+
+```typescript
+// apps/web/lib/upload.ts
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
+
+export async function uploadLessonPlan(file: File, teacherId: string) {
+  // 1. 校验文件格式和大小
+  const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+  if (!allowedTypes.includes(file.type)) throw new Error('不支持的文件格式');
+  if (file.size > 20 * 1024 * 1024) throw new Error('文件不能超过20MB');
+
+  // 2. 生成唯一路径：{teacherId}/{timestamp}_{filename}
+  const path = `${teacherId}/${Date.now()}_${file.name}`;
+
+  // 3. 直传到 Supabase Storage
+  const { data, error } = await supabase.storage
+    .from('lesson-plans')
+    .upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (error) throw error;
+
+  // 4. 获取公开 URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('lesson-plans')
+    .getPublicUrl(path);
+
+  // 5. 通知后端记录 + 触发解析
+  const response = await fetch('/api/upload/lesson-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: file.name,
+      fileUrl: publicUrl,
+      fileType: file.name.split('.').pop(),
+      storagePath: path,
+    }),
+  });
+
+  return response.json();
+}
+```
+
+#### 后端处理上传回调
+
+```typescript
+// apps/server/src/routes/upload.ts
+import { Hono } from 'hono';
+import { requireRole } from '../middleware/role';
+
+const app = new Hono();
+
+// 教案上传回调 → 记录DB + 触发解析 Workflow
+app.post('/lesson-plan', requireRole('teacher'), async (c) => {
+  const profile = c.get('profile');
+  const body = await c.req.json();
+  const db = c.get('db');
+
+  // 1. 存入 documents 表
+  const [doc] = await db.insert(documents).values({
+    teacherId: profile.id,
+    title: body.title,
+    fileUrl: body.fileUrl,
+    fileType: body.fileType,
+  }).returning();
+
+  // 2. 异步触发教案解析 Workflow（不阻塞响应）
+  const workflow = mastra.getWorkflow('parseLessonPlan');
+  workflow.execute({
+    documentId: doc.id,
+    fileUrl: body.fileUrl,
+    fileType: body.fileType,
+  }).catch(console.error); // 后台执行
+
+  return c.json({ id: doc.id, status: 'parsing' });
+});
+
+// 学生答题图片上传回调
+app.post('/student-image', requireRole('student'), async (c) => {
+  const profile = c.get('profile');
+  const body = await c.req.json();
+  // 记录图片 URL 关联到答案
+  return c.json({ imageUrl: body.fileUrl });
+});
+
+export { app as uploadRoutes };
+```
+
+### Supabase Storage 权限策略（RLS）
+
+```sql
+-- lesson-plans bucket: 教师只能上传和访问自己的文件
+CREATE POLICY "Teachers upload own lesson plans"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'lesson-plans'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+CREATE POLICY "Teachers read own lesson plans"
+  ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'lesson-plans'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- student-uploads bucket: 学生只能上传自己的文件
+CREATE POLICY "Students upload own files"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'student-uploads'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- student-uploads: 教师可以读取本班学生的文件
+CREATE POLICY "Teachers read class student files"
+  ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'student-uploads'
+    AND (storage.foldername(name))[1] IN (
+      SELECT student_id::text FROM class_students
+      WHERE class_id IN (
+        SELECT id FROM classes WHERE teacher_id = auth.uid()
+      )
+    )
+  );
+
+-- avatars bucket: 公开读，仅本人写
+CREATE POLICY "Anyone can read avatars"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'avatars');
+
+CREATE POLICY "Users upload own avatar"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'avatars'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+```
+
+### 文档解析方案
+
+教师上传的教案/题库文件需要解析为纯文本，再交给 AI Agent 处理。
+
+#### 解析工具链
+
+| 文件格式 | 解析方案 | npm 包 | 说明 |
+|---------|---------|--------|------|
+| PDF | 文本提取 | `pdf-parse` | 纯文本 PDF 直接提取 |
+| PDF（扫描件） | OCR 识别 | 调用外部 OCR API | 二期支持，一期提示用户上传电子版 |
+| DOCX | XML 解析 | `mammoth` | Word 转 HTML/纯文本 |
+| PPTX | XML 解析 | `pptx-parser` 或自写解析 | 提取幻灯片文本 |
+| XLSX | 表格解析 | `xlsx` / `sheetjs` | 题库批量导入 |
+
+#### Workers 环境适配
+
+`pdf-parse` 和 `mammoth` 均为纯 JS 实现，**不依赖 Node.js fs**，可在 Workers 中运行。解析流程：
+
+```typescript
+// apps/server/src/services/document-parser.ts
+
+export async function parseDocument(fileUrl: string, fileType: string): Promise<string> {
+  // 1. 从 Supabase Storage 下载文件到内存（ArrayBuffer）
+  const response = await fetch(fileUrl);
+  const buffer = await response.arrayBuffer();
+
+  // 2. 根据格式解析
+  switch (fileType) {
+    case 'pdf': {
+      const pdfParse = await import('pdf-parse');
+      const result = await pdfParse(Buffer.from(buffer));
+      return result.text;
+    }
+    case 'docx': {
+      const mammoth = await import('mammoth');
+      const result = await mammoth.extractRawText({ buffer: Buffer.from(buffer) });
+      return result.value;
+    }
+    case 'pptx': {
+      // 自定义 PPTX 解析（解压 ZIP → 读取 slide XML → 提取文本）
+      return await parsePptx(buffer);
+    }
+    default:
+      throw new Error(`不支持的文件格式: ${fileType}`);
+  }
+}
+```
+
+#### 完整的教案解析流程
+
+```
+教案文件（PDF/DOCX/PPTX）
+  │
+  ▼
+文档解析 → 纯文本
+  │
+  ▼
+文本分块（chunk）
+  ├── strategy: 'recursive'
+  ├── size: 1000 字符
+  └── overlap: 200 字符
+  │
+  ▼
+阿里百炼 Embedding → 向量化
+  │
+  ▼
+存入 pgvector（document_chunks 表）
+  │
+  ▼  同时
+教案解析 Agent 提取结构化知识点
+  │
+  ▼
+更新 documents 表
+  ├── parsed_content: 纯文本
+  └── knowledge_points: ["牛顿第二定律", "力的合成", ...]
+```
+
+### 文件清理策略
+
+| 场景 | 策略 |
+|------|------|
+| 导出文件（试卷PDF） | 生成签名 URL（有效期 1 小时），过期自动失效 |
+| 删除教案 | 同步删除 Storage 文件 + document_chunks 向量 |
+| 学生退出班级 | 保留答题图片（成绩记录需要） |
+| 教师删除账号 | 标记 disabled，文件保留 90 天后清理 |
+
+---
+
 ## 十、AI 模型配置
 
 ```typescript
