@@ -1,0 +1,68 @@
+/* ============================================
+ * Design Tokens — physics-ai-tutor
+ * 禁止在组件内直接写 hex 值，统一使用这里的 CSS 变量
+ * ============================================ */
+
+:root {
+  /* 品牌主色 */
+  --color-primary: #891fe5;
+  --color-primary-hover: #7a19cc;
+  --color-primary-soft: #f3e8ff;
+  --color-primary-soft-2: #eee7f3;
+
+  /* 背景色 */
+  --color-bg-page: #f7f6f8;
+  --color-bg-card: #ffffff;
+  --color-bg-elevated: #fcfbfd;
+  --color-bg-dark: #1a1121;
+
+  /* 文字色 */
+  --color-text-strong: #150e1b;
+  --color-text-default: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-text-subtle: #9ca3af;
+
+  /* 边框色 */
+  --color-border: #eadff4;
+  --color-border-strong: #dcd0e7;
+
+  /* 状态色 */
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #ca8a04;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+  --color-info: #2563eb;
+  --color-info-soft: #dbeafe;
+
+  /* 渐变 */
+  --gradient-primary: linear-gradient(135deg, #7c24f0 0%, #a13af6 100%);
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(21, 14, 27, 0.06);
+  --shadow-md: 0 8px 24px rgba(137, 31, 229, 0.08);
+  --shadow-lg: 0 16px 40px rgba(137, 31, 229, 0.16);
+
+  /* shadcn/ui 变量覆盖 — primary 必须为 #891fe5 */
+  --primary: 271 78% 51%; /* #891fe5 in HSL */
+  --primary-foreground: 0 0% 100%;
+  --background: 270 14% 97%; /* --color-bg-page */
+  --foreground: 271 24% 9%; /* --color-text-strong */
+  --card: 0 0% 100%;
+  --card-foreground: 271 24% 9%;
+  --border: 277 47% 92%; /* --color-border */
+  --input: 277 47% 92%;
+  --ring: 271 78% 51%;
+  --radius: 0.5rem;
+  --muted: 270 25% 95%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 270 60% 96%;
+  --accent-foreground: 271 24% 9%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 271 24% 9%;
+  --secondary: 270 25% 95%;
+  --secondary-foreground: 271 24% 9%;
+}

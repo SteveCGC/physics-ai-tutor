@@ -12,4 +12,14 @@ pnpm-debug.log*
 .env*.local
 .turbo
 .vercel
+.open-next/
 .claude/settings.local.json
+
+# Wrangler 本地开发密钥
+apps/server/.dev.vars
+
+# AI 编排器审查日志（本地生成，不提交）
+ai/review-logs/
+
+# TypeScript 构建产物
+*.tsbuildinfo

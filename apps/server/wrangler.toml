@@ -1,0 +1,44 @@
+name = "physics-ai-tutor-server"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+FRONTEND_URL = "http://localhost:3000"
+
+# Cloudflare D1 (SQLite) - 生产环境暂不使用，通过 Supabase PostgreSQL
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "physics-ai-tutor"
+# database_id = "placeholder"
+
+# Cloudflare R2 Buckets
+[[r2_buckets]]
+binding = "R2_EXAM_FILES"
+bucket_name = "physics-ai-exam-files"
+preview_bucket_name = "physics-ai-exam-files-dev"
+
+[[r2_buckets]]
+binding = "R2_STUDENT_SUBMISSIONS"
+bucket_name = "physics-ai-student-submissions"
+preview_bucket_name = "physics-ai-student-submissions-dev"
+
+[[r2_buckets]]
+binding = "R2_TEACHER_DOCUMENTS"
+bucket_name = "physics-ai-teacher-documents"
+preview_bucket_name = "physics-ai-teacher-documents-dev"
+
+[[r2_buckets]]
+binding = "R2_GENERATED_REPORTS"
+bucket_name = "physics-ai-generated-reports"
+preview_bucket_name = "physics-ai-generated-reports-dev"
+
+[[r2_buckets]]
+binding = "R2_AVATARS"
+bucket_name = "physics-ai-avatars"
+preview_bucket_name = "physics-ai-avatars-dev"
+
+# Hyperdrive 加速 Supabase PostgreSQL（生产环境）
+# [[hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "placeholder"
