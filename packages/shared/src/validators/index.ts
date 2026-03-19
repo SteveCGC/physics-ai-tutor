@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export * from "./exam";
+export * from "./question";
+
 // ============================================================
 // Zod Validators — physics-ai-tutor
 // ============================================================
@@ -7,19 +10,8 @@ import { z } from "zod";
 // 用户角色
 export const UserRoleSchema = z.enum(["teacher", "student"]);
 
-// 试卷状态
-export const ExamStatusSchema = z.enum(["draft", "published", "archived"]);
-
-// 题目类型（一期，无 comprehensive）
-export const QuestionTypeSchema = z.enum([
-  "choice",
-  "fill",
-  "calculation",
-  "short_answer",
-]);
-
-// 题目来源
-export const QuestionSourceSchema = z.enum(["ai", "manual", "imported"]);
+import { CreateExamSchema, ExamStatusSchema } from "./exam";
+import { CreateManualQuestionSchema, QuestionSourceSchema, QuestionTypeSchema } from "./question";
 
 // 提交状态
 export const SubmissionStatusSchema = z.enum([
@@ -54,32 +46,14 @@ export const JoinClassSchema = z.object({
     .regex(/^[A-Z0-9]{6}$/, "邀请码格式错误"),
 });
 
-// 创建试卷
-export const CreateExamSchema = z.object({
-  title: z.string().min(1, "试卷标题不能为空").max(100),
-  classId: z.string().uuid("班级ID格式错误"),
-  knowledgePoints: z.array(z.string()).min(1, "至少选择一个知识点"),
-  totalScore: z.number().int().min(1).max(300),
-  deadline: z.string().datetime().optional(),
-});
-
 // 更新试卷状态
 export const UpdateExamStatusSchema = z.object({
   status: ExamStatusSchema,
 });
 
 // 创建题目
-export const CreateQuestionSchema = z.object({
+export const CreateQuestionSchema = CreateManualQuestionSchema.extend({
   examId: z.string().uuid(),
-  type: QuestionTypeSchema,
-  content: z.string().min(1, "题目内容不能为空"),
-  options: z.array(z.string()).optional(),
-  answer: z.string().min(1, "标准答案不能为空"),
-  acceptedAnswers: z.array(z.string()).optional(),
-  explanation: z.string().optional(),
-  knowledgePoints: z.array(z.string()).default([]),
-  difficulty: z.number().int().min(1).max(5),
-  score: z.number().int().min(1),
   orderIndex: z.number().int().min(0),
   source: QuestionSourceSchema.default("manual"),
 });

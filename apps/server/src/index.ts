@@ -2,38 +2,34 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
-export type Env = {
-  // Supabase
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-  SUPABASE_DATABASE_URL: string;
-  // AI
-  ZHIPU_API_KEY: string;
-  DASHSCOPE_API_KEY: string;
-  // Cloudflare R2
-  R2_ACCESS_KEY_ID: string;
-  R2_SECRET_ACCESS_KEY: string;
-  R2_ACCOUNT_ID: string;
-  R2_EXAM_FILES: R2Bucket;
-  R2_STUDENT_SUBMISSIONS: R2Bucket;
-  R2_TEACHER_DOCUMENTS: R2Bucket;
-  R2_GENERATED_REPORTS: R2Bucket;
-  R2_AVATARS: R2Bucket;
-  // Hyperdrive（可选，生产环境加速 PostgreSQL）
-  HYPERDRIVE?: Hyperdrive;
-  // 前端地址
-  FRONTEND_URL: string;
-};
+import { createDb } from "./db/client";
+import { authMiddleware } from "./middleware/auth";
+import classesRoute from "./routes/classes";
+import examsRoute from "./routes/exams";
+import gradingRoute from "./routes/grading";
+import questionsRoute from "./routes/questions";
+import submissionsRoute from "./routes/submissions";
+import uploadRoute from "./routes/upload";
+import type { AppContext } from "./types";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<AppContext>();
+
+function jsonError(message: string, status: number, code?: string) {
+  return Response.json(code ? { error: message, code } : { error: message }, { status });
+}
 
 // 中间件
 app.use("*", logger());
+app.use("*", async (c, next) => {
+  const db = createDb(c.env);
+  c.set("db", db);
+  await next();
+});
 app.use(
   "*",
   cors({
     origin: (origin, c) => {
-      const frontendUrl = c.env.FRONTEND_URL || "http://localhost:3000";
+      const frontendUrl = c.env.FRONTEND_URL;
       return origin === frontendUrl ? origin : frontendUrl;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -41,6 +37,7 @@ app.use(
     credentials: true,
   })
 );
+app.use("/api/*", authMiddleware);
 
 // 健康检查
 app.get("/health", (c) => {
@@ -56,15 +53,22 @@ app.get("/api/v1", (c) => {
   });
 });
 
+app.route("/api/classes", classesRoute);
+app.route("/api/exams", examsRoute);
+app.route("/api/questions", questionsRoute);
+app.route("/api", submissionsRoute);
+app.route("/api", gradingRoute);
+app.route("/api", uploadRoute);
+
 // 404 处理
 app.notFound((c) => {
-  return c.json({ error: "Not Found", code: "NOT_FOUND" }, 404);
+  return jsonError("Not Found", 404, "NOT_FOUND");
 });
 
 // 错误处理
 app.onError((err, c) => {
   console.error("[Server Error]", err);
-  return c.json({ error: "Internal Server Error", code: "INTERNAL_ERROR" }, 500);
+  return jsonError("Internal Server Error", 500, "INTERNAL_ERROR");
 });
 
 export default app;

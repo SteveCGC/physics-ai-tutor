@@ -2,6 +2,9 @@
 // 共享类型定义 — physics-ai-tutor
 // ============================================================
 
+export * from "./exam";
+export * from "./question";
+
 // 用户角色
 export type UserRole = "teacher" | "student";
 
@@ -31,54 +34,6 @@ export interface Class {
   teacherId: string;
   inviteCode: string;
   createdAt: string;
-}
-
-// 试卷状态
-export type ExamStatus = "draft" | "published" | "archived";
-
-// 试卷
-export interface Exam {
-  id: string;
-  title: string;
-  status: ExamStatus;
-  teacherId: string;
-  classId: string;
-  knowledgePoints: string[];
-  totalScore: number;
-  deadline: string | null;
-  createdAt: string;
-  publishedAt: string | null;
-}
-
-// 题目类型（一期）
-export type QuestionType = "choice" | "fill" | "calculation" | "short_answer";
-
-// 题目来源
-export type QuestionSource = "ai" | "manual" | "imported";
-
-// 题目
-export interface Question {
-  id: string;
-  examId: string;
-  type: QuestionType;
-  content: string;
-  options: string[] | null; // 选择题选项
-  answer: string;
-  acceptedAnswers: string[] | null; // 等价答案集合
-  explanation: string | null;
-  knowledgePoints: string[];
-  difficulty: number; // 1-5
-  score: number;
-  orderIndex: number;
-  source: QuestionSource;
-  qualityFlags: QualityFlag[] | null;
-  createdAt: string;
-}
-
-export interface QualityFlag {
-  type: string;
-  message: string;
-  severity: "warning" | "error";
 }
 
 // 答题提交状态

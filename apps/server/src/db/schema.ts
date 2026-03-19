@@ -215,11 +215,14 @@ export const answers = pgTable(
     score: integer("score"),
     feedback: text("feedback"),
     teacherComment: text("teacher_comment"),
-    gradedBy: text("graded_by").notNull().default("auto"),
+    gradedBy: text("graded_by"),
     gradedAt: timestamp("graded_at", { withTimezone: true, mode: "date" }),
   },
   (table) => [
-    check("answers_graded_by_check", sql`${table.gradedBy} in ('auto', 'teacher')`),
+    check(
+      "answers_graded_by_check",
+      sql`${table.gradedBy} is null or ${table.gradedBy} in ('auto', 'teacher')`
+    ),
     uniqueIndex("answers_submission_question_unique").on(table.submissionId, table.questionId),
     index("answers_submission_id_idx").on(table.submissionId),
     index("answers_question_id_idx").on(table.questionId),
