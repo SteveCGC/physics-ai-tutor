@@ -1,0 +1,21 @@
+{
+  "project": "my-web-app",
+  "description": "示例任务清单 - 定义每个模块的编码指令和验收标准",
+  "tasks": [
+    {
+      "name": "auth-module",
+      "coding_prompt": "在 src/auth/ 目录下实现用户认证模块，包含：1) JWT token 签发与验证 2) 用户注册（邮箱+密码，bcrypt加密）3) 用户登录 4) refresh token 机制 5) 中间件保护路由。使用 TypeScript，编写完整的单元测试。",
+      "acceptance_criteria": "1. JWT 签发和验证功能完整，token 包含 userId 和 role\n2. 密码使用 bcrypt 加密，salt rounds >= 10\n3. refresh token 存储在数据库中，支持撤销\n4. 登录失败有频率限制\n5. 所有公共函数有 TypeScript 类型定义\n6. 单元测试覆盖率 > 80%\n7. 无硬编码的密钥或敏感信息"
+    },
+    {
+      "name": "database-layer",
+      "coding_prompt": "在 src/db/ 目录下实现数据库访问层，包含：1) 连接池管理 2) User 和 Session 模型的 CRUD 操作 3) 数据库迁移脚本 4) 事务支持。使用 PostgreSQL + Prisma ORM。",
+      "acceptance_criteria": "1. 连接池配置合理（最大连接数、超时设置）\n2. 所有数据库操作有错误处理\n3. 迁移脚本可以正确执行和回滚\n4. 事务在错误时正确回滚\n5. SQL 注入防护到位\n6. 包含 seed 数据脚本"
+    },
+    {
+      "name": "api-endpoints",
+      "coding_prompt": "在 src/routes/ 目录下实现 RESTful API 端点：1) POST /auth/register 2) POST /auth/login 3) POST /auth/refresh 4) GET /users/me 5) PUT /users/me。包含请求验证、错误处理、API 文档注释。",
+      "acceptance_criteria": "1. 所有端点有输入验证（使用 zod 或 joi）\n2. 错误响应格式统一 { error: string, code: string }\n3. 认证端点正确使用 auth 中间件\n4. HTTP 状态码使用正确\n5. 包含 rate limiting\n6. 有集成测试覆盖所有端点"
+    }
+  ]
+}

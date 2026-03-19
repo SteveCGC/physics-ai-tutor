@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#891fe5",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#1a1121",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>物理AI助手 - 题目预览确认</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="relative flex min-h-screen flex-col">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-50 w-full border-b border-primary/10 bg-background-light/80 backdrop-blur-md dark:bg-background-dark/80 px-6 py-4">
+<div class="mx-auto flex max-w-7xl items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight">物理AI助手</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 rounded-lg border border-primary/20 px-4 py-2 text-sm font-medium hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+                        预览学生版
+                    </button>
+<button class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+<span class="material-symbols-outlined text-[20px]">save</span>
+                        保存草稿
+                    </button>
+</div>
+</div>
+</header>
+<main class="mx-auto flex w-full max-w-7xl flex-1 gap-8 p-6">
+<!-- Left Content Area: Question List -->
+<div class="flex-1 space-y-6">
+<div class="flex flex-col gap-2">
+<h2 class="text-3xl font-bold">AI生成题目确认</h2>
+<p class="text-slate-500 dark:text-slate-400">基于“牛顿运动定律”生成的专项练习题，您可以对单题进行微调。</p>
+</div>
+<!-- Question Card 1 -->
+<div class="group relative flex flex-col overflow-hidden rounded-xl border border-primary/10 bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md">
+<div class="absolute right-4 top-4 z-10 flex gap-2">
+<button class="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm text-primary hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+<button class="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm text-red-500 hover:bg-red-500 hover:text-white transition-all">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="flex flex-col md:flex-row">
+<div class="w-full md:w-64 h-48 md:h-auto overflow-hidden bg-primary/5">
+<img class="h-full w-full object-cover" data-alt="Abstract physics diagram showing force vectors and a block on an incline" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcn_DKBp7BkCBmWffKNXA5j0ZMjne9Kdyvc04_dG9BGNWVlhhr7TfOe3VcVcIsTXSHkNI6aW6VUdM7NVGwdoL-16iSCzSS3ZUI54hvK9yUDq_Jc0ZFyg9JzUozoANWLVA-9gZNHE6N1XylshdAMwAzixUG1r5JJePAY3DnYZDkBA7OETGW_ueE3R3vLiYHxgvoYszn_r61pDIBOi3c1vJ1Qll9nxScaSWNJDwTFlj9VuoHmWnKBFtuAoZgFOSuGASW7KFH9NOAHbg"/>
+</div>
+<div class="flex flex-1 flex-col p-6">
+<div class="mb-2 flex items-center gap-2">
+<span class="rounded bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">单选题</span>
+<span class="text-xs text-slate-400">难度：中等</span>
+</div>
+<h3 class="text-lg font-bold leading-snug">1. 斜面上的平衡与摩擦力分析</h3>
+<p class="mt-4 text-slate-600 dark:text-slate-300">
+                                如图所示，一质量为 m 的木块放置在倾角为 θ 的斜面上。已知木块与斜面间的动摩擦因数为 μ。若对木块施加一水平向右的力 F = mg，求木块能够保持静止的 θ 取值范围。
+                            </p>
+<div class="mt-6 flex flex-wrap gap-2">
+<span class="text-xs font-medium text-primary"># 受力分析</span>
+<span class="text-xs font-medium text-primary"># 牛顿第二定律</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Question Card 2 -->
+<div class="group relative flex flex-col overflow-hidden rounded-xl border border-primary/10 bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md">
+<div class="absolute right-4 top-4 z-10 flex gap-2">
+<button class="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm text-primary hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+<button class="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm text-red-500 hover:bg-red-500 hover:text-white transition-all">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="flex flex-col md:flex-row">
+<div class="w-full md:w-64 h-48 md:h-auto overflow-hidden bg-primary/5">
+<img class="h-full w-full object-cover" data-alt="Abstract visualization of quantum physics particles moving in space" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQCN92jBaatgSxgZA2o8k47WLwgt7ub0rhs3hqlOyC_GVKv2jPxhWKd_Gyj2JQFdx0h1hbkp1eaJMvsEReQZL43LPBdXnoiw3yCikE3gGTKozDBIkzHlkrD2RZdYutAmRuL4EGRyiJs5NumgBL9k6c5L9cD0Fct4047bQl-yY0FsUoGB_RF6cvDhlc1YOAKH6JGPC8Gy_0KYVtj-i07xwgsVgjGekonsHKOGD63NrBugpMedLoJHtVtlQoUB9oCUhmR21r5GfP12o"/>
+</div>
+<div class="flex flex-1 flex-col p-6">
+<div class="mb-2 flex items-center gap-2">
+<span class="rounded bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">填空题</span>
+<span class="text-xs text-slate-400">难度：困难</span>
+</div>
+<h3 class="text-lg font-bold leading-snug">2. 变加速运动的位移公式推导</h3>
+<p class="mt-4 text-slate-600 dark:text-slate-300 font-serif italic">
+                                设物体在 t=0 时的速度为 v₀，其加速度随时间变化关系为 a = kt (k为常数)。请写出该物体在时间 t 内的位移表达式 x(t) = __________。
+                            </p>
+<div class="mt-6 flex flex-wrap gap-2">
+<span class="text-xs font-medium text-primary"># 微积分基础</span>
+<span class="text-xs font-medium text-primary"># 运动学</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Question Card 3 -->
+<div class="group relative flex flex-col overflow-hidden rounded-xl border border-primary/10 bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md">
+<div class="absolute right-4 top-4 z-10 flex gap-2">
+<button class="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm text-primary hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+<button class="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm text-red-500 hover:bg-red-500 hover:text-white transition-all">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<div class="flex flex-col md:flex-row">
+<div class="w-full md:w-64 h-48 md:h-auto overflow-hidden bg-primary/5">
+<img class="h-full w-full object-cover" data-alt="Graphic showing electrical circuit components and connections" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBx_CZ3aqNoBtX5JUSxNZSBhlEpjzQ_T_uVwNWmWMZhHBY7y2j6wkwvoHufyNo36v_HQSZaB68-x7zJeraTyuid2CxEoxIt9kHrZRDs4-tsIE6HYy8uteKtH4jYlUucaaYWTaBUdr3_OGz3P9TiKIRV5DBYltHMHoboNs9hrPopyxsoL75wH5aNeSTkZNHLd_GUzsyg-SUeeYVUWGEX9ARetQimjV_R08Qu5S9IRxnxlEJj3VZNfS6ntzcKh-AGwXfR83aJlsJEA_4"/>
+</div>
+<div class="flex flex-1 flex-col p-6">
+<div class="mb-2 flex items-center gap-2">
+<span class="rounded bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">计算题</span>
+<span class="text-xs text-slate-400">难度：中等</span>
+</div>
+<h3 class="text-lg font-bold leading-snug">3. 功与能的转化效率</h3>
+<p class="mt-4 text-slate-600 dark:text-slate-300">
+                                某电动机驱动一质量为 50kg 的物体沿垂直方向匀速上升 10m，耗时 5s。若电动机输入电压为 220V，电流为 5A，求该系统的机械能转化效率 η。 (g 取 10m/s²)
+                            </p>
+<div class="mt-6 flex flex-wrap gap-2">
+<span class="text-xs font-medium text-primary"># 功率与效率</span>
+<span class="text-xs font-medium text-primary"># 电能</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Statistics -->
+<aside class="w-80 space-y-6">
+<div class="sticky top-24">
+<div class="rounded-xl border border-primary/10 bg-white dark:bg-slate-900 p-6 shadow-sm">
+<h3 class="mb-6 text-lg font-bold">实时卷面统计</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between rounded-lg bg-background-light dark:bg-slate-800 p-4">
+<div class="flex flex-col">
+<span class="text-xs text-slate-400">预计总分</span>
+<span class="text-xl font-bold">100 分</span>
+</div>
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<div class="flex items-center justify-between rounded-lg bg-background-light dark:bg-slate-800 p-4">
+<div class="flex flex-col">
+<span class="text-xs text-slate-400">预估时长</span>
+<span class="text-xl font-bold">45 分钟</span>
+</div>
+<span class="material-symbols-outlined text-primary">timer</span>
+</div>
+<div class="flex flex-col gap-2 rounded-lg bg-background-light dark:bg-slate-800 p-4">
+<div class="flex items-center justify-between">
+<span class="text-xs text-slate-400">知识点覆盖</span>
+<span class="text-sm font-bold text-primary">6 个</span>
+</div>
+<div class="flex flex-wrap gap-1 mt-2">
+<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">动力学</span>
+<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">摩擦力</span>
+<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">功与能</span>
+<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">运动学</span>
+<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">微积分</span>
+<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">电路</span>
+</div>
+</div>
+<div class="pt-4">
+<div class="flex justify-between text-xs mb-1">
+<span>难度分布 (均衡)</span>
+<span>68%</span>
+</div>
+<div class="h-1.5 w-full rounded-full bg-primary/10">
+<div class="h-full w-[68%] rounded-full bg-primary"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
+<span class="material-symbols-outlined text-3xl text-primary/40">add_circle</span>
+<p class="mt-2 text-sm font-medium text-primary">点击添加更多题目</p>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer Action Bar -->
+<footer class="sticky bottom-0 z-40 w-full border-t border-primary/10 bg-background-light/95 dark:bg-background-dark/95 p-6 backdrop-blur-md">
+<div class="mx-auto flex max-w-7xl items-center justify-end gap-4">
+<button class="flex items-center gap-2 rounded-xl border-2 border-primary/30 bg-white dark:bg-slate-900 px-8 py-4 text-lg font-bold text-primary hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined">restart_alt</span>
+                    重新生成整卷
+                </button>
+<button class="flex items-center gap-2 rounded-xl bg-primary px-12 py-4 text-lg font-bold text-white shadow-xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined">rocket_launch</span>
+                    确认并发布
+                </button>
+</div>
+</footer>
+</div>
+</body></html>

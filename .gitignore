@@ -12,3 +12,4 @@ pnpm-debug.log*
 .env*.local
 .turbo
 .vercel
+.claude/settings.local.json

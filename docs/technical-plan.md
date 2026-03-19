@@ -2,7 +2,7 @@
 
 ## 一、项目背景
 
-为高中物理教师打造的AI教学助手，核心功能：智能出题、自动批改、学情分析、个性化推荐。本技术方案基于PRD文档（`docs/PRD.md`），覆盖从项目架构到部署的完整技术设计。
+为高中物理教师打造的 AI 教学助手。本技术方案基于最新版 PRD（`docs/PRD.md`），以一期 MVP 为主，优先覆盖班级管理、AI 出题、教师审查、学生答题、客观题自动批改、主观题教师批改与成绩发布闭环。
 
 ---
 
@@ -11,13 +11,13 @@
 | 层级 | 技术选型 | 说明 |
 |------|---------|------|
 | 前端 | Next.js 15 + Tailwind CSS + shadcn/ui | App Router, RSC |
-| UI 补充 | KaTeX（公式渲染）+ Recharts（图表） | 物理公式 + 学情曲线 |
+| UI 补充 | KaTeX（公式渲染） | 一期基础公式渲染 |
 | 后端 | Hono + Mastra + Drizzle ORM | 轻量 TS 后端 + AI Agent |
 | 数据库 | Supabase（PostgreSQL + Auth + pgvector） | 认证 + 数据库 |
 | 文件存储 | Cloudflare R2 | 10GB 免费，零出口费，Workers binding |
 | AI 对话模型 | 智谱 GLM-4-Flash（开发期，永久免费） | Mastra 内置 zhipuai provider |
-| Embedding 模型 | 阿里百炼 text-embedding-v3（免费额度） | OpenAI 兼容接口 |
-| 向量搜索 | pgvector（Supabase 内置） | 教案/题库语义检索 |
+| Embedding 模型 | 阿里百炼 text-embedding-v3（按需启用） | P1 教案/题库检索再接入 |
+| 向量搜索 | pgvector（Supabase 内置，可选） | P1 语义检索 |
 | Monorepo | pnpm workspace | 前后端共享类型 |
 
 ---
@@ -47,23 +47,20 @@ physics-ai-tutor/
 │   │   │   │   │       ├── page.tsx        # 试卷详情/审查
 │   │   │   │   │       ├── edit/page.tsx   # 编辑试卷
 │   │   │   │   │       └── grading/page.tsx # 批改中心
-│   │   │   │   ├── questions/      # 题库管理
+│   │   │   │   ├── questions/      # 手动录题/基础题库
 │   │   │   │   ├── students/       # 学生管理
-│   │   │   │   ├── analytics/      # 学情分析
 │   │   │   │   └── settings/       # 设置
 │   │   │   ├── student/            # 学生端
 │   │   │   │   ├── assignments/    # 作业列表
 │   │   │   │   │   └── [id]/page.tsx  # 答题页
 │   │   │   │   ├── results/        # 成绩查看
-│   │   │   │   └── practice/       # 个性化练习
 │   │   │   └── api/                # Next.js BFF 层（代理后端）
 │   │   ├── components/
 │   │   │   ├── ui/                 # shadcn/ui 组件
 │   │   │   ├── layout/             # Sidebar, Header, etc.
 │   │   │   ├── exam/               # 出题相关组件
 │   │   │   ├── question/           # 题目渲染/编辑组件
-│   │   │   ├── grading/            # 批改相关组件
-│   │   │   └── analytics/          # 图表/学情组件
+│   │   │   └── grading/            # 批改相关组件
 │   │   ├── lib/
 │   │   │   ├── api.ts              # 后端 API 请求封装
 │   │   │   ├── auth.ts             # Supabase Auth 客户端
@@ -84,7 +81,6 @@ physics-ai-tutor/
 │       │   │   ├── questions.ts    # 题目 CRUD
 │       │   │   ├── submissions.ts  # 答题提交
 │       │   │   ├── grading.ts      # 批改接口
-│       │   │   ├── analytics.ts    # 学情数据
 │       │   │   ├── upload.ts       # 文件上传（教案/题库）
 │       │   │   └── classes.ts      # 班级管理
 │       │   ├── middleware/
@@ -95,26 +91,21 @@ physics-ai-tutor/
 │       │   │   ├── agents/
 │       │   │   │   ├── question-generator.ts   # 出题 Agent
 │       │   │   │   ├── quality-checker.ts      # 题目质检 Agent
-│       │   │   │   ├── lesson-parser.ts        # 教案解析 Agent
-│       │   │   │   └── analytics-agent.ts      # 学情分析 Agent
+│       │   │   │   └── lesson-parser.ts        # 教案解析 Agent（P1）
 │       │   │   ├── tools/
-│       │   │   │   ├── search-question-bank.ts # 搜索已有题库
-│       │   │   │   ├── validate-question.ts    # 校验题目质量
-│       │   │   │   ├── query-scores.ts         # 查询成绩数据
-│       │   │   │   ├── save-question.ts        # 存储题目到DB
-│       │   │   │   └── get-knowledge-points.ts # 获取知识点列表
+│       │   │   │   ├── search-question-bank.ts # 搜索已有题库（基础版本）
+│       │   │   │   └── validate-question.ts    # 校验题目质量
 │       │   │   └── workflows/
 │       │   │       ├── generate-exam.ts        # 出题工作流
-│       │   │       ├── parse-lesson-plan.ts    # 教案解析工作流
-│       │   │       └── analyze-class.ts        # 学情分析工作流
+│       │   │       └── parse-lesson-plan.ts    # 教案解析工作流（P1）
 │       │   ├── db/
 │       │   │   ├── schema.ts       # Drizzle schema 定义
 │       │   │   ├── client.ts       # 数据库连接
 │       │   │   └── migrations/     # 数据库迁移文件
 │       │   └── services/
 │       │       ├── grading.ts      # 客观题批改逻辑（规则匹配）
-│       │       ├── embedding.ts    # 文档向量化服务
-│       │       └── export.ts       # PDF/Word 导出
+│       │       ├── document-parser.ts # 文件解析
+│       │       └── export.ts       # PDF/Word 导出（P1）
 │       ├── drizzle.config.ts
 │       ├── tsconfig.json
 │       └── package.json
@@ -126,7 +117,7 @@ physics-ai-tutor/
 │       │   ├── exam.ts             # 试卷类型
 │       │   ├── user.ts             # 用户类型
 │       │   ├── submission.ts       # 提交类型
-│       │   └── analytics.ts        # 学情类型
+│       │   └── grading.ts          # 批改/发布类型
 │       ├── constants/
 │       │   ├── knowledge-points.ts # 知识点体系（人教版）
 │       │   └── question-types.ts   # 题型枚举
@@ -144,7 +135,7 @@ physics-ai-tutor/
 
 ## 四、数据库设计（Drizzle Schema）
 
-### 核心表
+### 核心表（MVP）
 
 ```typescript
 // apps/server/src/db/schema.ts
@@ -155,6 +146,7 @@ export const profiles = pgTable('profiles', {
   role: text('role').notNull(),                          // 'teacher' | 'student'
   name: text('name').notNull(),
   school: text('school'),
+  classId: uuid('class_id'),                             // 学生一期仅允许绑定一个班级
   createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -168,17 +160,11 @@ export const classes = pgTable('classes', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-// 班级-学生关联
-export const classStudents = pgTable('class_students', {
-  classId: uuid('class_id').references(() => classes.id),
-  studentId: uuid('student_id').references(() => profiles.id),
-}, (t) => ({ pk: primaryKey(t.classId, t.studentId) }));
-
 // 试卷表
 export const exams = pgTable('exams', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
-  status: text('status').notNull().default('draft'),     // draft | published | closed
+  status: text('status').notNull().default('draft'),     // draft | published | archived
   teacherId: uuid('teacher_id').references(() => profiles.id),
   classId: uuid('class_id').references(() => classes.id),
   knowledgePoints: jsonb('knowledge_points'),             // ["牛顿第二定律", "力的合成"]
@@ -192,17 +178,18 @@ export const exams = pgTable('exams', {
 export const questions = pgTable('questions', {
   id: uuid('id').primaryKey().defaultRandom(),
   examId: uuid('exam_id').references(() => exams.id),
-  type: text('type').notNull(),                          // choice | fill | calculation | short_answer | comprehensive
+  type: text('type').notNull(),                          // choice | fill | calculation | short_answer
   content: text('content').notNull(),                    // 支持 LaTeX
   options: jsonb('options'),                              // 选择题选项 ["A. ...", "B. ..."]
   answer: text('answer').notNull(),                      // 标准答案
+  acceptedAnswers: jsonb('accepted_answers'),            // 填空题等价答案集合
   explanation: text('explanation'),                       // 解析
   knowledgePoints: jsonb('knowledge_points'),
   difficulty: integer('difficulty').notNull(),            // 1-5
   score: integer('score').notNull(),                     // 该题分值
   orderIndex: integer('order_index').notNull(),
   source: text('source').default('ai'),                  // ai | manual | imported
-  embedding: vector('embedding', { dimensions: 1024 }),  // 阿里百炼 text-embedding-v3 = 1024 维
+  qualityFlags: jsonb('quality_flags'),                  // 审查提示
   createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -211,10 +198,10 @@ export const submissions = pgTable('submissions', {
   id: uuid('id').primaryKey().defaultRandom(),
   examId: uuid('exam_id').references(() => exams.id),
   studentId: uuid('student_id').references(() => profiles.id),
-  status: text('status').notNull().default('in_progress'), // in_progress | submitted | graded
+  status: text('status').notNull().default('in_progress'), // in_progress | submitted | pending_review | published
   totalScore: integer('total_score'),
   submittedAt: timestamp('submitted_at'),
-  gradedAt: timestamp('graded_at'),
+  publishedAt: timestamp('published_at'),
 });
 
 // 单题作答记录
@@ -223,14 +210,30 @@ export const answers = pgTable('answers', {
   submissionId: uuid('submission_id').references(() => submissions.id),
   questionId: uuid('question_id').references(() => questions.id),
   studentAnswer: text('student_answer'),                  // 学生答案
+  attachmentUrl: text('attachment_url'),                  // 附件，供教师查看
   isCorrect: boolean('is_correct'),                      // 客观题自动判断
   score: integer('score'),                                // 得分
   feedback: text('feedback'),                             // 错因解析（客观题自动）
   teacherComment: text('teacher_comment'),                // 教师批注（主观题）
   gradedBy: text('graded_by'),                           // 'auto' | 'teacher'
+  gradedAt: timestamp('graded_at'),
 });
 
-// 教案文档表
+// 成绩发布后的修改审计
+export const scoreAuditLogs = pgTable('score_audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  submissionId: uuid('submission_id').references(() => submissions.id),
+  answerId: uuid('answer_id').references(() => answers.id),
+  operatorId: uuid('operator_id').references(() => profiles.id),
+  oldScore: integer('old_score'),
+  newScore: integer('new_score'),
+  oldComment: text('old_comment'),
+  newComment: text('new_comment'),
+  reason: text('reason').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// 文件上传表：一期用于题库文件上传，P1 扩展到教案解析
 export const documents = pgTable('documents', {
   id: uuid('id').primaryKey().defaultRandom(),
   teacherId: uuid('teacher_id').references(() => profiles.id),
@@ -238,17 +241,10 @@ export const documents = pgTable('documents', {
   fileUrl: text('file_url').notNull(),                   // Supabase Storage URL
   fileType: text('file_type'),                           // pdf | docx | pptx
   parsedContent: text('parsed_content'),                 // 解析后的纯文本
-  knowledgePoints: jsonb('knowledge_points'),             // AI 提取的知识点
+  useCase: text('use_case').notNull(),                   // question_bank | lesson_plan
+  parseStatus: text('parse_status').default('pending'),  // pending | done | failed
+  knowledgePoints: jsonb('knowledge_points'),
   createdAt: timestamp('created_at').defaultNow(),
-});
-
-// 文档向量块表（RAG 用）
-export const documentChunks = pgTable('document_chunks', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  documentId: uuid('document_id').references(() => documents.id),
-  content: text('content').notNull(),                    // 文本块
-  embedding: vector('embedding', { dimensions: 1024 }),  // 向量
-  metadata: jsonb('metadata'),                           // { chapter, topic, ... }
 });
 ```
 
@@ -261,37 +257,28 @@ export const documentChunks = pgTable('document_chunks', {
 ```typescript
 // apps/server/src/mastra/index.ts
 import { Mastra } from '@mastra/core';
-import { PgVector } from '@mastra/pg';
 import { questionGeneratorAgent } from './agents/question-generator';
 import { qualityCheckerAgent } from './agents/quality-checker';
 import { lessonParserAgent } from './agents/lesson-parser';
-import { analyticsAgent } from './agents/analytics-agent';
 import { generateExamWorkflow } from './workflows/generate-exam';
 import { parseLessonPlanWorkflow } from './workflows/parse-lesson-plan';
-import { analyzeClassWorkflow } from './workflows/analyze-class';
-
-export const vectorStore = new PgVector({
-  connectionString: process.env.SUPABASE_DATABASE_URL!,
-});
 
 export const mastra = new Mastra({
   agents: {
     questionGenerator: questionGeneratorAgent,
     qualityChecker: qualityCheckerAgent,
     lessonParser: lessonParserAgent,
-    analytics: analyticsAgent,
   },
   workflows: {
     generateExam: generateExamWorkflow,
     parseLessonPlan: parseLessonPlanWorkflow,
-    analyzeClass: analyzeClassWorkflow,
   },
 });
 ```
 
 ### 5.2 Agent 定义
 
-#### 出题 Agent
+#### 出题 Agent（MVP）
 
 ```typescript
 // apps/server/src/mastra/agents/question-generator.ts
@@ -309,16 +296,16 @@ export const questionGeneratorAgent = new Agent({
 1. 严格按照指定的知识点、题型、难度生成题目
 2. 物理公式使用 LaTeX 格式（如 $F=ma$）
 3. 选择题必须有4个选项，且只有一个正确答案
-4. 每道题必须附带详细解析
-5. 计算题需要给出完整的解题步骤
+4. 每道题至少给出标准答案，解析可选但建议输出
+5. 一期题型仅限 choice、fill、calculation、short_answer
 6. 确保物理量单位正确（SI单位制）
 7. 难度1-5对应：基础概念→简单应用→综合运用→拓展提升→竞赛难度
-8. 生成前先搜索题库，避免与已有题目高度重复
+8. 避免与同一教师已有题目高度重复
+9. 不生成依赖图片识别才能作答的题目
 
 输出格式为严格 JSON。`,
   tools: {
     searchQuestionBank,
-    saveQuestion,
     getKnowledgePoints,
   },
 });
@@ -345,7 +332,7 @@ export const qualityCheckerAgent = new Agent({
 });
 ```
 
-#### 教案解析 Agent
+#### 教案解析 Agent（P1）
 
 ```typescript
 // apps/server/src/mastra/agents/lesson-parser.ts
@@ -361,29 +348,6 @@ export const lessonParserAgent = new Agent({
 4. 建议的题型和难度分布
 
 输出格式为结构化 JSON。`,
-});
-```
-
-#### 学情分析 Agent
-
-```typescript
-// apps/server/src/mastra/agents/analytics-agent.ts
-export const analyticsAgent = new Agent({
-  name: 'analytics',
-  model: 'zhipuai/glm-4-flash',
-  instructions: `你是学情分析专家，根据学生答题数据生成分析报告。
-
-分析维度：
-1. 个人/班级薄弱知识点排序
-2. 典型错误模式识别
-3. 知识点掌握趋势
-4. 个性化练习推荐建议
-5. 教学改进建议（面向教师）
-
-基于数据说话，给出具体可操作的建议。`,
-  tools: {
-    queryScores,
-  },
 });
 ```
 
@@ -409,9 +373,7 @@ export const searchQuestionBank = createTool({
     })),
   }),
   execute: async ({ context }) => {
-    // 1. 将知识点文本向量化
-    // 2. 在 pgvector 中搜索相似题目
-    // 3. 返回结果
+    // MVP 可先做关键词检索；P1 再升级为向量检索
   },
 });
 ```
@@ -434,10 +396,10 @@ const parseRequirements = createStep({
   }),
   outputSchema: z.object({
     prompt: z.string(),
-    searchContext: z.string(),
+    searchContext: z.string().optional(),
   }),
   execute: async ({ context }) => {
-    // 构建出题 prompt + RAG 检索上下文
+    // 构建出题 prompt；若有基础题库则附带检索上下文
   },
 });
 
@@ -458,7 +420,7 @@ const qualityCheck = createStep({
   id: 'quality-check',
   execute: async ({ context, mastra }) => {
     const checker = mastra.getAgent('qualityChecker');
-    // 逐题检查，标记问题
+    // 逐题检查，输出 qualityFlags 供教师审查页展示
   },
 });
 
@@ -498,7 +460,6 @@ import { examRoutes } from './routes/exams';
 import { questionRoutes } from './routes/questions';
 import { submissionRoutes } from './routes/submissions';
 import { gradingRoutes } from './routes/grading';
-import { analyticsRoutes } from './routes/analytics';
 import { uploadRoutes } from './routes/upload';
 import { classRoutes } from './routes/classes';
 import { authMiddleware } from './middleware/auth';
@@ -514,7 +475,6 @@ app.route('/api/exams', examRoutes);
 app.route('/api/questions', questionRoutes);
 app.route('/api/submissions', submissionRoutes);
 app.route('/api/grading', gradingRoutes);
-app.route('/api/analytics', analyticsRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/classes', classRoutes);
 
@@ -536,9 +496,8 @@ export default app;
 
 | 角色 | 标识 | 说明 |
 |------|------|------|
-| 教师 | `teacher` | 创建班级、出题、批改、查看学情 |
-| 学生 | `student` | 答题、查看成绩、个性化练习 |
-| 管理员 | `admin` | 学校级管理，管理教师和班级（二期） |
+| 教师 | `teacher` | 创建班级、出题、批改、发布成绩 |
+| 学生 | `student` | 答题、查看成绩 |
 
 #### 注册与身份认证流程
 
@@ -552,7 +511,7 @@ export default app;
 学生加入：
   教师创建班级 → 生成邀请码/二维码
   → 学生注册/登录后输入邀请码
-  → 创建 profiles（role: 'student'）+ class_students 关联
+  → 创建/更新 profiles（role: 'student'，写入 classId）
   → 进入学生端
 ```
 
@@ -562,12 +521,12 @@ export default app;
 // profiles 表增加字段
 export const profiles = pgTable('profiles', {
   id: uuid('id').primaryKey(),                          // = Supabase auth.users.id
-  role: text('role').notNull(),                          // 'teacher' | 'student' | 'admin'
+  role: text('role').notNull(),                          // 'teacher' | 'student'
   name: text('name').notNull(),
   avatar: text('avatar'),                                // 头像 URL
   phone: text('phone'),                                  // 手机号（可选登录方式）
   school: text('school'),
-  title: text('title'),                                  // 教师职称（如"物理教研组长"）
+  classId: uuid('class_id'),
   status: text('status').notNull().default('active'),    // active | disabled
   lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at').defaultNow(),
@@ -614,7 +573,7 @@ export const authMiddleware = async (c, next) => {
 
 ```typescript
 // apps/server/src/middleware/role.ts
-type Role = 'teacher' | 'student' | 'admin';
+type Role = 'teacher' | 'student';
 
 export const requireRole = (...roles: Role[]) => {
   return async (c, next) => {
@@ -630,7 +589,6 @@ export const requireRole = (...roles: Role[]) => {
 export const requireOwnership = (resourceField: string = 'teacherId') => {
   return async (c, next) => {
     const profile = c.get('profile');
-    if (profile.role === 'admin') return await next(); // admin 跳过
     // 具体的归属校验在各路由中实现
     c.set('ownerId', profile.id);
     await next();
@@ -649,10 +607,9 @@ export const requireOwnership = (resourceField: string = 'teacherId') => {
 | `GET /api/questions` | ✅ | ❌ | 题库管理 |
 | `POST /api/submissions` | ❌ | ✅ | 提交答题 |
 | `GET /api/submissions` | ✅ 本班的 | ✅ 仅自己的 | 查看提交记录 |
-| `POST /api/grading/*` | ✅ | ❌ | 批改操作 |
-| `GET /api/analytics/class` | ✅ 本班的 | ❌ | 班级学情 |
-| `GET /api/analytics/student` | ✅ 本班学生 | ✅ 仅自己 | 个人学情 |
-| `POST /api/upload` | ✅ | ❌ | 上传教案 |
+| `POST /api/grading/answers/:id` | ✅ | ❌ | 单题打分/写批注 |
+| `POST /api/grading/submissions/:id/publish` | ✅ | ❌ | 发布成绩 |
+| `POST /api/upload` | ✅ | ❌ | 上传题库文件或教案文件 |
 | `POST /api/classes` | ✅ | ❌ | 创建班级 |
 | `POST /api/classes/join` | ❌ | ✅ | 加入班级 |
 
@@ -712,9 +669,7 @@ CREATE POLICY "Teachers see own exams" ON exams
 CREATE POLICY "Students see published exams" ON exams
   FOR SELECT USING (
     status = 'published'
-    AND class_id IN (
-      SELECT class_id FROM class_students WHERE student_id = auth.uid()
-    )
+    AND class_id = (SELECT class_id FROM profiles WHERE id = auth.uid())
   );
 
 -- 学生只能查看自己的提交记录
@@ -790,7 +745,7 @@ export function middleware(request: NextRequest) {
 | 图标 | Lucide Icons 线性风格 |
 | 数据展示 | 大数字突出 + 小标签辅助 + 趋势箭头 |
 | 状态标签 | 彩色圆角 Badge：`已批改`绿色、`待批改`橙色、`进行中`蓝色 |
-| 图表 | 紫色系柱状图/折线图，简洁无多余装饰 |
+| 图表 | 一期不作为核心页面依赖，P1 再引入 |
 
 #### Tailwind 主题配置
 
@@ -809,18 +764,17 @@ export function middleware(request: NextRequest) {
 
 | 页面 | 路由 | 功能 |
 |------|------|------|
-| 仪表盘 | `/` | 欢迎卡、今日数据、AI快速操作、最近作业 |
+| 仪表盘 | `/` | 欢迎卡、班级入口、最近试卷、待批改提醒 |
 | AI 出题 | `/exams/new` | 选知识点 → 选题型/难度 → 生成 → 审查 |
 | 试卷审查 | `/exams/[id]` | 逐题预览、编辑、重新生成、发布 |
 | 批改中心 | `/exams/[id]/grading` | 按题目/按学生视图、打分、批注 |
-| 学情分析 | `/analytics` | 班级/个人薄弱点、趋势图、建议 |
 | 题库管理 | `/questions` | 搜索、筛选、导入、分类 |
-| 学生答题 | `/student/assignments/[id]` | 答题界面、LaTeX输入、提交 |
-| 学生成绩 | `/student/results` | 历史成绩、错题本、进步曲线 |
+| 学生答题 | `/student/assignments/[id]` | 答题界面、基础公式输入、提交 |
+| 学生成绩 | `/student/results` | 已发布成绩、分题得分、教师批注 |
 
 ### 7.3 实时交互
 
-出题时使用 **Streaming**，实时显示生成进度：
+出题时可以使用 **Streaming**，实时显示生成进度；不是一期阻塞项：
 
 ```typescript
 // 前端调用出题 workflow，流式显示
@@ -836,14 +790,14 @@ const reader = response.body.getReader();
 
 ## 八、关键流程
 
-### 8.1 出题流程
+### 8.1 出题流程（MVP）
 
 ```
 教师选择知识点/题型/难度
   → API: POST /api/exams (创建试卷记录)
   → Mastra Workflow: generate-exam
-    → Step 1: RAG 检索教案相关内容
-    → Step 2: 出题 Agent 生成题目（Streaming）
+    → Step 1: 读取知识点与基础题库上下文
+    → Step 2: 出题 Agent 生成题目（可选 Streaming）
     → Step 3: 质检 Agent 逐题检查
     → Step 4: 存入 DB（draft 状态）
   → 前端进入审查页面
@@ -852,34 +806,30 @@ const reader = response.body.getReader();
   → 通知学生
 ```
 
-### 8.2 答题批改流程
+### 8.2 答题批改流程（MVP）
 
 ```
 学生打开试卷 → 答题 → 提交
   → API: POST /api/submissions
   → 服务端自动批改客观题（规则匹配）
-  → 客观题即时返回结果
+  → 计算 choice/fill 得分并保存
   → 主观题标记 "待批改"
 
 教师进入批改中心
   → 逐题打分、添加批注
-  → API: POST /api/grading/publish
+  → API: POST /api/grading/submissions/:id/publish
   → 学生收到通知，查看成绩
 ```
 
-### 8.3 RAG 教案解析流程
+### 8.3 文件上传与解析流程
 
 ```
-教师上传教案文件
-  → Supabase Storage 存储文件
+教师上传题库文件或教案文件
+  → R2 存储文件
   → API: POST /api/upload
   → 文档解析（PDF/Word → 纯文本）
-  → Mastra Workflow: parse-lesson-plan
-    → Step 1: 文本分块（chunk）
-    → Step 2: 阿里百炼 Embedding → 向量化
-    → Step 3: 存入 pgvector (document_chunks 表)
-    → Step 4: 教案解析 Agent 提取知识点
-  → 返回结构化知识点列表
+  → 一期：提取题目原文或基础文本，供教师手动确认入库
+  → P1：调用 parse-lesson-plan 提取知识点
 ```
 
 ---
@@ -891,7 +841,7 @@ const reader = response.body.getReader();
 | 用户认证 | Auth | 教师/学生注册登录，JWT token |
 | 文件存储 | Cloudflare R2（见 9.1） | 教案PDF/Word、学生答题图片 |
 | 数据库 | PostgreSQL | 所有业务数据（通过 Drizzle ORM 操作） |
-| 向量搜索 | pgvector 扩展 | 教案/题库语义检索 |
+| 向量搜索 | pgvector 扩展（P1） | 教案/题库语义检索 |
 | 实时通知 | Realtime | 成绩发布通知学生（可选） |
 | RLS | Row Level Security | 数据权限隔离（教师只看自己的班级） |
 
@@ -919,7 +869,7 @@ R2 和 Workers 同属 Cloudflare 生态，通过 binding 直接访问，不经�
 | `lesson-plans` | 教师上传的教案 | 教师私有（仅上传者可访问） | PDF, DOCX, PPTX |
 | `question-banks` | 教师上传的题库文件 | 教师私有 | PDF, DOCX, XLSX |
 | `student-uploads` | 学生答题时上传的图片（解题步骤、草稿） | 学生私有 + 对应教师可读 | PNG, JPG, JPEG |
-| `exports` | 系统生成的导出文件（试卷PDF、成绩报告） | 教师私有，临时签名 URL | PDF, DOCX |
+| `exports` | 系统生成的导出文件（P1） | 教师私有，临时签名 URL | PDF, DOCX |
 | `avatars` | 用户头像 | 公开读 | PNG, JPG, JPEG |
 
 ### 文件限制
@@ -1160,16 +1110,18 @@ async function canAccessFile(profile, bucket, key, db): Promise<boolean> {
 
   // 教师访问学生文件：校验是否本班学生
   if (profile.role === 'teacher' && bucket === 'student-uploads') {
-    const isClassStudent = await db.query.classStudents.findFirst({
+    const student = await db.query.profiles.findFirst({
+      where: eq(profiles.id, ownerId),
+    });
+    if (!student?.classId) return false;
+
+    const classRecord = await db.query.classes.findFirst({
       where: and(
-        eq(classStudents.studentId, ownerId),
-        inArray(classStudents.classId,
-          db.select({ id: classes.id }).from(classes)
-            .where(eq(classes.teacherId, profile.id))
-        ),
+        eq(classes.id, student.classId),
+        eq(classes.teacherId, profile.id),
       ),
     });
-    return !!isClassStudent;
+    return !!classRecord;
   }
 
   // 头像：公开读
@@ -1340,10 +1292,10 @@ export async function parseDocument(
   └── overlap: 200 字符
   │
   ▼
-阿里百炼 Embedding → 向量化
+P1: 阿里百炼 Embedding → 向量化
   │
   ▼
-存入 pgvector（document_chunks 表）
+存入 pgvector（P1 启用）
   │
   ▼  同时
 教案解析 Agent 提取结构化知识点
@@ -1358,8 +1310,8 @@ export async function parseDocument(
 
 | 场景 | 策略 |
 |------|------|
-| 导出文件（试卷PDF） | 生成签名 URL（有效期 1 小时），过期自动失效 |
-| 删除教案 | 同步删除 R2 文件 + document_chunks 向量 |
+| 导出文件（P1） | 生成签名 URL（有效期 1 小时），过期自动失效 |
+| 删除教案 | 同步删除 R2 文件；若已启用向量检索，则同时删除向量数据 |
 | 学生退出班级 | 保留答题图片（成绩记录需要） |
 | 教师删除账号 | 标记 disabled，文件保留 90 天后清理 |
 | R2 生命周期规则 | exports bucket 设置 7 天自动清理 |
@@ -1424,14 +1376,14 @@ FRONTEND_URL=http://localhost:3000         # 前端地址
 - [ ] 教案上传 + RAG 解析流程
 - [ ] 质检 Agent 集成
 
-### 阶段 3：分析 + 优化（第 3 周）
+### 阶段 3：增强能力（上线后）
 
-- [ ] 薄弱点分析（学情分析 Agent）
+- [ ] 薄弱点分析
 - [ ] 个性化练习推荐
-- [ ] 题库管理 + 导入
+- [ ] 题库管理增强
 - [ ] PDF/Word 导出试卷
 - [ ] Streaming 出题体验优化
-- [ ] Memory 集成（学生学习记忆）
+- [ ] 教案向量检索
 
 ---
 
@@ -1443,7 +1395,7 @@ FRONTEND_URL=http://localhost:3000         # 前端地址
 2. 启动前端：`cd apps/web && pnpm dev` → Next.js 监听 :3000
 3. 验证出题：前端选择"牛顿第二定律" + "选择题" → 点击生成 → 检查是否返回结构化题目
 4. 验证批改：学生提交选择题 → 检查是否自动返回评分
-5. 验证 RAG：上传一份教案 PDF → 检查知识点提取结果 → 基于教案出题
+5. 验证上传解析：上传一份题库或教案文件 → 检查文本提取与状态更新
 
 ### Agent 测试
 
@@ -1483,7 +1435,7 @@ cd apps/server && pnpm mastra dev
                              ┌──────────┴───────────┐
                              │  Supabase             │
                              │  PostgreSQL + Auth    │
-                             │  + Storage + pgvector │
+                             │  + pgvector(P1 可选)  │
                              └──────────────────────┘
 ```
 
@@ -1494,7 +1446,7 @@ cd apps/server && pnpm mastra dev
 | 前端 (Next.js) | Cloudflare Workers | `@opennextjs/cloudflare` |
 | 后端 (Hono + Mastra) | Cloudflare Workers | `@mastra/deployer-cloudflare` + `wrangler` |
 | 数据库连接 | Cloudflare Hyperdrive | 代理 Supabase PostgreSQL |
-| 数据库 | Supabase (外部) | PostgreSQL + pgvector |
+| 数据库 | Supabase (外部) | PostgreSQL + pgvector（P1 可选） |
 | 文件存储 | Cloudflare R2 | 教案/图片（binding 直连，零延迟） |
 | 认证 | Supabase Auth (外部) | JWT 验证 |
 

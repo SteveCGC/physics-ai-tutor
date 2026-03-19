@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#891fe5",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#1a1121",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<title>物理AI助手 - 题目管理</title>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex h-screen w-full overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-background-dark flex flex-col justify-between p-4">
+<div class="flex flex-col gap-6">
+<!-- User Profile / App Logo -->
+<div class="flex items-center gap-3 px-2">
+<div class="bg-primary/10 rounded-full p-2 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">science</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-slate-100 text-base font-bold leading-tight">物理AI助手</h1>
+<p class="text-primary text-xs font-medium">高级教师版</p>
+</div>
+</div>
+<!-- Nav Links -->
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-sm font-medium">首页</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-sm font-bold">题目管理</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="text-sm font-medium">智能批改</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="text-sm font-medium">班级统计</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">设置</span>
+</a>
+</nav>
+</div>
+<!-- Logout Button -->
+<button class="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-primary/20 text-primary text-sm font-bold hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-sm">logout</span>
+<span>退出登录</span>
+</button>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col overflow-hidden bg-background-light dark:bg-background-dark/50">
+<!-- Header -->
+<header class="h-16 border-b border-primary/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-8 flex items-center justify-between">
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl leading-none">search</span>
+<input class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none" placeholder="搜索题目、知识点或难度..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</button>
+<div class="h-8 w-px bg-primary/10 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-slate-900 dark:text-slate-100">张老师</p>
+<p class="text-[10px] text-slate-500">物理组组长</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary/10">
+<span class="material-symbols-outlined text-primary">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-8">
+<!-- Page Title Section -->
+<div class="flex items-center justify-between mb-8">
+<div>
+<h2 class="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">题目管理</h2>
+<p class="text-slate-500 mt-1">管理您的物理试题库，支持AI智能生成</p>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95">
+<span class="material-symbols-outlined">add_circle</span>
+<span>新增题目</span>
+</button>
+</div>
+<!-- Empty State Container -->
+<div class="flex-1 min-h-[500px] flex flex-col items-center justify-center bg-white dark:bg-background-dark/40 rounded-3xl border-2 border-dashed border-primary/10 p-12 text-center">
+<div class="relative mb-8">
+<div class="absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-150"></div>
+<!-- Illustrative Physics Iconography -->
+<div class="relative w-64 h-64 flex items-center justify-center">
+<div class="grid grid-cols-2 gap-4 w-full h-full opacity-20 absolute pointer-events-none">
+<span class="material-symbols-outlined text-6xl text-primary animate-pulse">atm</span>
+<span class="material-symbols-outlined text-6xl text-primary/60">speed</span>
+<span class="material-symbols-outlined text-6xl text-primary/40">electric_bolt</span>
+<span class="material-symbols-outlined text-6xl text-primary/80">straighten</span>
+</div>
+<div class="w-48 h-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex items-center justify-center border border-primary/10">
+<div class="flex flex-col items-center">
+<span class="material-symbols-outlined text-primary text-7xl mb-2">auto_awesome</span>
+<div class="w-12 h-1 bg-primary/20 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">暂无题目</h3>
+<p class="text-slate-500 max-w-sm mx-auto mb-8 leading-relaxed">
+                        您的题库目前空空如也。点击上方按钮，让 AI 助教为您生成高质量的物理题目吧。
+                    </p>
+<div class="flex gap-4">
+<button class="px-8 py-3 bg-primary text-white rounded-xl font-bold hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-95">
+                            立即新增
+                        </button>
+<button class="px-8 py-3 bg-primary/5 text-primary rounded-xl font-bold hover:bg-primary/10 transition-all border border-primary/10">
+                            从Excel导入
+                        </button>
+</div>
+</div>
+<!-- Footer Quick Stats (Optional Subtle Hint) -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 opacity-50">
+<div class="bg-white dark:bg-background-dark/40 p-4 rounded-2xl border border-primary/5 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">inventory_2</span>
+</div>
+<div>
+<p class="text-xs text-slate-500">已存题目</p>
+<p class="text-lg font-bold">0</p>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/40 p-4 rounded-2xl border border-primary/5 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">auto_fix</span>
+</div>
+<div>
+<p class="text-xs text-slate-500">AI 生成</p>
+<p class="text-lg font-bold">0</p>
+</div>
+</div>
+<div class="bg-white dark:bg-background-dark/40 p-4 rounded-2xl border border-primary/5 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">groups</span>
+</div>
+<div>
+<p class="text-xs text-slate-500">共享题库</p>
+<p class="text-lg font-bold">1,240+</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

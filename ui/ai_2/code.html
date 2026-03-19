@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#891fe5",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#1a1121",
+                        "accent-purple": "#754e97",
+                        "surface-light": "#eee7f3",
+                        "text-main": "#150e1b"
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<title>高中物理教学管理系统 - 教学计划</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-main">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-64 bg-background-dark text-slate-100 flex flex-col border-r border-primary/10">
+<div class="p-6 flex items-center gap-3">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white">science</span>
+</div>
+<h2 class="text-lg font-bold tracking-tight">智教物理</h2>
+</div>
+<nav class="flex-1 px-4 space-y-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">仪表盘</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="text-sm font-medium">AI智能出题</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-white shadow-lg shadow-primary/20" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="text-sm font-medium">教学计划</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-sm font-medium">学情分析</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined">database</span>
+<span class="text-sm font-medium">题库管理</span>
+</a>
+</nav>
+<div class="p-4 border-t border-white/5">
+<div class="flex items-center gap-3 p-2 rounded-xl bg-white/5">
+<div class="size-10 rounded-full bg-cover bg-center border-2 border-primary/50" data-alt="Teacher profile avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD1xWRvVe2wjVfGD3uM4Goht1tccRDo9wJohkeiOE8ZDRvlRGIzLimNhhF-8VFT93lR72m6nuM0Yku18LDRFjOW9muK2bp7HHx0EKk5hfcvdeKn_-obdCQXGWLc8PtN8WraOUtRw-SDRKJWPNMq31f8jz1uSiolmRYf1byb0XC-y6CxUdCQrht5ZqhQ3VdkAC7RjWBOF3-mSJtJmdSuQhDkT-gt2pT30oV-9z4ado4ZUL-y4LxulCEjjazrU3Tkaixhj21gWFFkAxc')"></div>
+<div class="flex flex-col">
+<p class="text-sm font-bold">王老师</p>
+<p class="text-xs text-slate-400">高级物理教师</p>
+</div>
+<button class="ml-auto text-slate-400 hover:text-white">
+<span class="material-symbols-outlined text-sm">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-hidden">
+<!-- Header/Toolbar -->
+<header class="h-16 bg-white dark:bg-slate-900 border-b border-surface-light dark:border-slate-800 flex items-center justify-between px-8">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative max-w-md w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-accent-purple text-xl">search</span>
+<input class="w-full bg-surface-light dark:bg-slate-800 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20" placeholder="搜索课程、教案或题目..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="text-right hidden sm:block mr-4">
+<p class="text-xs text-accent-purple font-medium uppercase">Today</p>
+<p class="text-sm font-bold">2023年10月23日 周一</p>
+</div>
+<button class="size-10 flex items-center justify-center rounded-lg bg-surface-light dark:bg-slate-800 text-text-main hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="size-10 flex items-center justify-center rounded-lg bg-surface-light dark:bg-slate-800 text-text-main hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-8 bg-background-light dark:bg-background-dark">
+<!-- Page Title & Actions -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+<div>
+<h1 class="text-3xl font-black tracking-tight text-text-main mb-2">教学计划</h1>
+<p class="text-accent-purple">高效管理您的每周物理教学进度与AI辅助资源</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex bg-surface-light dark:bg-slate-800 p-1 rounded-xl">
+<button class="px-4 py-1.5 rounded-lg text-sm font-bold bg-white dark:bg-slate-700 shadow-sm">按周查看</button>
+<button class="px-4 py-1.5 rounded-lg text-sm font-medium text-accent-purple hover:text-text-main">按月查看</button>
+</div>
+<button class="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-xl">add</span>
+<span>新增教学计划</span>
+</button>
+</div>
+</div>
+<!-- Week Selector -->
+<div class="flex border-b border-surface-light dark:border-slate-800 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
+<button class="px-8 py-4 border-b-4 border-primary text-primary font-bold">周一 10/23</button>
+<button class="px-8 py-4 border-b-4 border-transparent text-accent-purple font-medium hover:text-text-main transition-colors">周二 10/24</button>
+<button class="px-8 py-4 border-b-4 border-transparent text-accent-purple font-medium hover:text-text-main transition-colors">周三 10/25</button>
+<button class="px-8 py-4 border-b-4 border-transparent text-accent-purple font-medium hover:text-text-main transition-colors">周四 10/26</button>
+<button class="px-8 py-4 border-b-4 border-transparent text-accent-purple font-medium hover:text-text-main transition-colors">周五 10/27</button>
+<button class="px-8 py-4 border-b-4 border-transparent text-slate-400 font-medium">周六 10/28</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Schedule Cards -->
+<div class="lg:col-span-8 space-y-6">
+<!-- Card 1 -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-surface-light dark:border-slate-800 hover:shadow-xl hover:shadow-primary/5 transition-all group">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-4">
+<div class="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl font-bold">schedule</span>
+</div>
+<div>
+<h3 class="text-xl font-bold group-hover:text-primary transition-colors">牛顿第一定律：惯性与理想实验</h3>
+<p class="text-accent-purple text-sm font-medium">第一节课 | 08:30 - 09:15 | 高一(3)班</p>
+</div>
+</div>
+<span class="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                                    AI习题已生成
+                                </span>
+</div>
+<div class="mb-6">
+<p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                                    教学目标：理解理想实验的方法论意义，通过伽利略斜面实验推导牛顿第一定律，掌握惯性的本质定义及其与质量的关系。
+                                </p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-light dark:bg-slate-800 rounded-lg text-xs font-bold text-accent-purple"># 理想实验</span>
+<span class="px-3 py-1 bg-surface-light dark:bg-slate-800 rounded-lg text-xs font-bold text-accent-purple"># 惯性</span>
+<span class="px-3 py-1 bg-surface-light dark:bg-slate-800 rounded-lg text-xs font-bold text-accent-purple"># 状态改变</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-surface-light dark:border-slate-800">
+<div class="flex -space-x-2">
+<div class="size-8 rounded-full border-2 border-white dark:border-slate-900 bg-primary/20 flex items-center justify-center text-[10px] font-bold">PPT</div>
+<div class="size-8 rounded-full border-2 border-white dark:border-slate-900 bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600">DOC</div>
+<div class="size-8 rounded-full border-2 border-white dark:border-slate-900 bg-orange-100 flex items-center justify-center text-[10px] font-bold text-orange-600">VID</div>
+</div>
+<button class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+                                    查看完整教案 <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-surface-light dark:border-slate-800 hover:shadow-xl hover:shadow-primary/5 transition-all group">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-4">
+<div class="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl font-bold">schedule</span>
+</div>
+<div>
+<h3 class="text-xl font-bold group-hover:text-primary transition-colors">力的合成与分解：专题复习</h3>
+<p class="text-accent-purple text-sm font-medium">第三节课 | 10:25 - 11:10 | 高一(1)班</p>
+</div>
+</div>
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">pending</span>
+                                    AI习题生成中
+                                </span>
+</div>
+<div class="mb-6">
+<p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                                    教学目标：强化平行四边形定则的灵活运用，掌握三力平衡的几何解法与正交分解法，解决变力动态平衡问题。
+                                </p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-light dark:bg-slate-800 rounded-lg text-xs font-bold text-accent-purple"># 平行四边形定则</span>
+<span class="px-3 py-1 bg-surface-light dark:bg-slate-800 rounded-lg text-xs font-bold text-accent-purple"># 动态平衡</span>
+<span class="px-3 py-1 bg-surface-light dark:bg-slate-800 rounded-lg text-xs font-bold text-accent-purple"># 正交分解</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-surface-light dark:border-slate-800">
+<div class="flex gap-2 text-xs font-medium text-slate-500">
+                                    已关联 24 道历史错题
+                                </div>
+<button class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+                                    编辑计划 <span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Sidebar Info -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Pending Tasks -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-surface-light dark:border-slate-800">
+<h4 class="text-lg font-bold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">assignment_turned_in</span>
+                                近期待办
+                            </h4>
+<div class="space-y-4">
+<div class="flex gap-3 p-3 rounded-xl bg-background-light dark:bg-slate-800 border-l-4 border-primary">
+<div class="flex-1">
+<p class="text-sm font-bold">批改(3)班实验报告</p>
+<p class="text-xs text-accent-purple">截止: 今天 18:00</p>
+</div>
+<input class="rounded border-primary text-primary focus:ring-primary/20" type="checkbox"/>
+</div>
+<div class="flex gap-3 p-3 rounded-xl hover:bg-background-light dark:hover:bg-slate-800 transition-colors">
+<div class="flex-1">
+<p class="text-sm font-bold">准备周三物理竞赛辅导资料</p>
+<p class="text-xs text-accent-purple">截止: 明天 12:00</p>
+</div>
+<input class="rounded border-primary text-primary focus:ring-primary/20" type="checkbox"/>
+</div>
+<div class="flex gap-3 p-3 rounded-xl hover:bg-background-light dark:hover:bg-slate-800 transition-colors">
+<div class="flex-1">
+<p class="text-sm font-bold">录制牛顿第二定律微课</p>
+<p class="text-xs text-accent-purple">截止: 10/26</p>
+</div>
+<input class="rounded border-primary text-primary focus:ring-primary/20" type="checkbox"/>
+</div>
+</div>
+<button class="w-full mt-4 text-sm font-bold text-accent-purple py-2 hover:bg-surface-light dark:hover:bg-slate-800 rounded-lg transition-colors">查看全部待办</button>
+</div>
+<!-- Analysis Progress -->
+<div class="bg-primary text-white rounded-2xl p-6 shadow-xl shadow-primary/20">
+<h4 class="text-lg font-bold mb-4">教案解析进度</h4>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-xs font-bold mb-1 opacity-90">
+<span>本周课程解析完成度</span>
+<span>85%</span>
+</div>
+<div class="h-2 w-full bg-white/20 rounded-full overflow-hidden">
+<div class="h-full bg-white rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<p class="text-xs opacity-80 leading-relaxed">
+                                    AI 已为您解析 12 份教案，生成关联习题 48 道，平均解析深度：专家级。
+                                </p>
+<button class="w-full bg-white text-primary py-2.5 rounded-xl text-sm font-bold hover:bg-opacity-90 transition-all">
+                                    一键生成下周计划
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

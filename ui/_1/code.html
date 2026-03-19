@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#891fe5",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#1a1121",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>物理AI助手 - 智能出题设置</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 overflow-hidden">
+<!-- Background Content: Question List Page -->
+<div class="relative flex min-h-screen flex-col">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between border-b border-primary/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-10 py-4 sticky top-0 z-10">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3 text-primary">
+<span class="material-symbols-outlined text-3xl">psychology</span>
+<h2 class="text-xl font-bold tracking-tight">物理AI助手</h2>
+</div>
+<nav class="flex items-center gap-6">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">题目仓库</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">我的收藏</a>
+</nav>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<div class="relative max-w-xs w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary/60">search</span>
+<input class="w-full bg-primary/5 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20" placeholder="搜索题目..." type="text"/>
+</div>
+<div class="flex gap-3">
+<button class="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20">
+<span class="material-symbols-outlined text-xl">notifications</span>
+</button>
+<button class="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20">
+<span class="material-symbols-outlined text-xl">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 max-w-5xl mx-auto w-full p-8">
+<div class="mb-8 flex justify-between items-center">
+<div>
+<h1 class="text-3xl font-bold mb-2">题目列表</h1>
+<p class="text-slate-500 dark:text-slate-400">基于AI生成的个性化物理练习题</p>
+</div>
+<button class="bg-primary text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined">add</span>
+                    智能出题
+                </button>
+</div>
+<!-- Example Question Card (Background) -->
+<div class="bg-white dark:bg-slate-800/50 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+<div class="flex flex-col md:flex-row">
+<div class="w-full md:w-72 h-48 bg-primary/5 flex items-center justify-center relative overflow-hidden" data-alt="Abstract physics diagram showing momentum conservation">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent"></div>
+<span class="material-symbols-outlined text-6xl text-primary/20">architecture</span>
+</div>
+<div class="flex-1 p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-3">
+<span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold uppercase">2023全国卷</span>
+<span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 text-xs font-bold uppercase">高三</span>
+</div>
+<h3 class="text-xl font-bold mb-2">关于动量守恒的经典案例分析</h3>
+<p class="text-slate-600 dark:text-slate-400 leading-relaxed">考察多物体碰撞过程中的能量损耗与动量关系。重点分析弹性碰撞与非弹性碰撞的边界条件...</p>
+</div>
+<div class="mt-6 flex justify-between items-center">
+<div class="flex gap-4">
+<span class="flex items-center gap-1 text-sm text-slate-500"><span class="material-symbols-outlined text-sm">visibility</span> 1.2k</span>
+<span class="flex items-center gap-1 text-sm text-slate-500"><span class="material-symbols-outlined text-sm">favorite</span> 245</span>
+</div>
+<button class="text-primary font-bold text-sm flex items-center gap-1">
+                                查看详情 <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 bg-background-dark/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+<!-- Modal Container -->
+<div class="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
+<!-- Modal Header -->
+<div class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-gradient-to-r from-primary/5 to-transparent">
+<div>
+<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">智能出题设置</h2>
+<p class="text-sm text-slate-500 mt-1">配置参数以生成个性化物理练习题</p>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Content -->
+<div class="p-8 space-y-6">
+<!-- Grade Select -->
+<div class="grid grid-cols-1 gap-2">
+<label class="text-sm font-bold text-slate-700 dark:text-slate-300">适用年级</label>
+<div class="relative">
+<select class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+<option>请选择年级</option>
+<option>高一</option>
+<option>高二</option>
+<option>高三</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+</div>
+</div>
+<!-- Knowledge Points -->
+<div class="space-y-3">
+<label class="text-sm font-bold text-slate-700 dark:text-slate-300">核心知识点</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium flex items-center gap-1 shadow-sm">
+                            牛顿定律 <span class="material-symbols-outlined text-xs">close</span>
+</button>
+<button class="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium flex items-center gap-1 shadow-sm">
+                            动量守恒 <span class="material-symbols-outlined text-xs">close</span>
+</button>
+<button class="px-4 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-colors">
+                            万有引力
+                        </button>
+<button class="px-4 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-colors">
+                            电场强度
+                        </button>
+<button class="px-4 py-1.5 rounded-full border-2 border-dashed border-primary/30 text-primary/60 text-sm font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">add</span> 自定义
+                        </button>
+</div>
+</div>
+<!-- Question Type Distribution -->
+<div class="space-y-3">
+<label class="text-sm font-bold text-slate-700 dark:text-slate-300">题型占比 (%)</label>
+<div class="grid grid-cols-3 gap-4">
+<div class="space-y-1">
+<span class="text-xs text-slate-500">选择题</span>
+<input class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-center focus:ring-2 focus:ring-primary/20 focus:border-primary" type="number" value="40"/>
+</div>
+<div class="space-y-1">
+<span class="text-xs text-slate-500">填空题</span>
+<input class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-center focus:ring-2 focus:ring-primary/20 focus:border-primary" type="number" value="30"/>
+</div>
+<div class="space-y-1">
+<span class="text-xs text-slate-500">计算题</span>
+<input class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-center focus:ring-2 focus:ring-primary/20 focus:border-primary" type="number" value="30"/>
+</div>
+</div>
+</div>
+<!-- Difficulty Slider -->
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<label class="text-sm font-bold text-slate-700 dark:text-slate-300">难度设置</label>
+<span class="text-sm font-bold text-primary">中等</span>
+</div>
+<div class="px-2">
+<input class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary" max="3" min="1" step="1" type="range" value="2"/>
+<div class="flex justify-between mt-2 text-xs text-slate-400 font-medium">
+<span>容易</span>
+<span>中等</span>
+<span>困难</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-8 py-6 bg-slate-50 dark:bg-slate-800/50 flex gap-4">
+<button class="flex-1 px-6 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    取消
+                </button>
+<button class="flex-[2] bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/25">
+<span class="material-symbols-outlined">bolt</span>
+                    开始生成
+                </button>
+</div>
+</div>
+</div>
+</body></html>

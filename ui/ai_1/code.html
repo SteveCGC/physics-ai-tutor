@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans+SC:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#891fe5",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#1a1121",
+                        "accent-purple": "#754e97",
+                        "border-light": "#dcd0e7",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "Noto Sans SC", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>PhysicsAI | 登录</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-4">
+<div class="max-w-5xl w-full bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[700px]">
+<!-- Left Side: Branding Area -->
+<div class="w-full md:w-1/2 relative bg-primary flex flex-col justify-between p-12 text-white overflow-hidden">
+<!-- Decorative Background Elements -->
+<div class="absolute top-0 left-0 w-full h-full opacity-20">
+<div class="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full border-[1px] border-white/30"></div>
+<div class="absolute bottom-[-20%] right-[-10%] w-[80%] h-[80%] rounded-full border-[1px] border-white/20"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-px bg-gradient-to-r from-transparent via-white/40 to-transparent rotate-45"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-px bg-gradient-to-r from-transparent via-white/40 to-transparent -rotate-45"></div>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-12">
+<div class="bg-white p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary text-3xl">token</span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight">PhysicsAI</h1>
+</div>
+<div class="mt-20">
+<h2 class="text-4xl font-bold leading-tight mb-6">探索物理的<br/>无限可能</h2>
+<p class="text-primary/20 bg-white/10 backdrop-blur-md p-4 rounded-lg border border-white/10 text-white/90 leading-relaxed max-w-sm">
+                        搭载最先进的AI模型，为师生提供智能化的物理学习与教学辅助方案。
+                    </p>
+</div>
+</div>
+<div class="relative z-10 flex flex-col gap-4">
+<div class="flex items-center gap-4 text-sm text-white/70">
+<div class="flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-primary" data-alt="Student user profile avatar circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEL6LKkoQzdLjje_gXuLyJJ1Ga5YLT5w5Fg-f8biEGtIvy42JM-H7h9Rue9D3bevSOhDjpRvtUzLW9e-Fm6b_TDzpYPKkKhpVx-3TRVciNBScXaogCp0wlV19pkgw0wr-3NE_IBQ-jLUd81fgdTgOO1AHQDO4vuRVPq4xdPOl5Di9Y2qNx3r5OAL_kgQICje8NGVBtZbsz0ZkR96S1AFnaYYf7fK4aXhgocTon-V4CMcvPLfVxm4TH8g94NJZy6IoGGIpOiHLpQhA"/>
+<img class="w-8 h-8 rounded-full border-2 border-primary" data-alt="Teacher user profile avatar circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWH6G6lWEd35VgglXdZedxDHcltmgDE-wT5bwsZjxzKxQ8J5Q3EM7dhFtbjAPbU3j74FsiZV7hMfu4-ZEE7BO_XRLExsp5bKG7axC_nHatJqkmxpVpks1BogMPUGfX3C1lJ8Vp31b_xhBxP4hJNen9FW0dS5nDfvJoDKi-k2s5CJIPsBS0qYkM6TgbxWNsC5XWKURUb7DJQsE4GTU6Wwdh1cIDyQTv6lsd1PRZHXODyHi7R4c8vDQyOTvTR_Sa53T61ywUuHErNo0"/>
+<img class="w-8 h-8 rounded-full border-2 border-primary" data-alt="Researcher user profile avatar circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhVllshvsrMLY-G_tbcOqWRT4yxr24GWbUDERFzD7doaBGsYTrSkfVRzmGA2Tphz8Kw8xc5ZCY9_kqS1G4sNbOLnAsDBMOAKz8N5Yiq-eH-XX3ySJBjpnVO6A4401KrznUc5X-Yhi7adw7wFUjEmEtm4wsQsRQPxGK1K3i8ARJxjcqnMe06ms8QT9kRwSi9dnFc4KXHeLWoU8GSWFDe7T0148SnewY9ZmHhoaVgcXBjVpPpIZDYNWfGyBt-o8JPPPjw8KtHh8gb78"/>
+</div>
+<span>加入超过 50,000+ 物理爱好者的行列</span>
+</div>
+</div>
+<!-- Abstract Physics Illustration -->
+<div class="absolute bottom-0 right-0 opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-[300px]">blur_on</span>
+</div>
+</div>
+<!-- Right Side: Login Form -->
+<div class="w-full md:w-1/2 p-8 md:p-16 flex flex-col justify-center bg-white dark:bg-slate-900">
+<div class="mb-10">
+<h3 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">欢迎回来</h3>
+<p class="text-slate-500 dark:text-slate-400">请登录您的 PhysicsAI 账号</p>
+</div>
+<!-- Role Tabs -->
+<div class="flex border-b border-border-light dark:border-slate-800 mb-8">
+<button class="px-8 py-3 text-sm font-bold border-b-2 border-primary text-primary transition-colors">
+                    学生登录
+                </button>
+<button class="px-8 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    教师登录
+                </button>
+</div>
+<!-- Form -->
+<form action="#" class="space-y-6">
+<div>
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">用户名 / 邮箱</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
+<input class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-border-light dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white" placeholder="请输入您的用户名或邮箱" type="text"/>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">密码</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock</span>
+<input class="w-full pl-11 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-border-light dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white" placeholder="请输入您的密码" type="password"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" type="button">
+<span class="material-symbols-outlined text-xl">visibility</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="w-4 h-4 rounded text-primary focus:ring-primary border-border-light dark:border-slate-700 dark:bg-slate-800" type="checkbox"/>
+<span class="text-sm text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">记住我</span>
+</label>
+<a class="text-sm font-medium text-primary hover:underline" href="#">忘记密码？</a>
+</div>
+<button class="w-full py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg shadow-lg shadow-primary/20 transition-all transform active:scale-[0.98]" type="submit">
+                    立即登录
+                </button>
+</form>
+<!-- Divider -->
+<div class="relative my-10">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-border-light dark:border-slate-800"></div>
+</div>
+<div class="relative flex justify-center text-sm">
+<span class="px-4 bg-white dark:bg-slate-900 text-slate-400">使用其他方式登录</span>
+</div>
+</div>
+<!-- Social Logins -->
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-2 px-4 py-3 border border-border-light dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<svg class="w-5 h-5" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.35 15.65C16.1 15.9 15.75 16 15.41 16C15.07 16 14.71 15.87 14.46 15.61L12 13.15L9.54 15.61C9.29 15.86 8.93 16 8.59 16C8.25 16 7.9 15.87 7.65 15.61C7.14 15.1 7.14 14.28 7.65 13.77L10.11 11.31L7.65 8.85C7.14 8.34 7.14 7.52 7.65 7.01C8.16 6.5 8.98 6.5 9.49 7.01L11.95 9.47L14.41 7.01C14.92 6.5 15.74 6.5 16.25 7.01C16.76 7.52 16.76 8.34 16.25 8.85L13.79 11.31L16.25 13.77C16.86 14.38 16.86 15.14 16.35 15.65Z"></path>
+</svg>
+<span class="text-sm font-medium">微信</span>
+</button>
+<button class="flex items-center justify-center gap-2 px-4 py-3 border border-border-light dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<svg class="w-5 h-5 text-primary" fill="currentColor" viewbox="0 0 24 24">
+<path d="M2 12C2 6.48 6.48 2 12 2C17.52 2 22 6.48 22 12C22 17.52 17.52 22 12 22C6.48 22 2 17.52 2 12ZM12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C16.42 20 20 16.42 20 12C20 7.58 16.42 4 12 4Z"></path>
+</svg>
+<span class="text-sm font-medium">钉钉</span>
+</button>
+</div>
+<p class="mt-10 text-center text-sm text-slate-500">
+                还没有账号？ <a class="text-primary font-bold hover:underline" href="#">立即注册</a>
+</p>
+</div>
+</div>
+</body></html>

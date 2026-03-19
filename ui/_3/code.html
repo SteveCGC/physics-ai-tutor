@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#891fe5",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#1a1121",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>Physics AI Assistant - Dashboard</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="w-64 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-background-dark/50 hidden lg:flex flex-col">
+<div class="p-6 flex items-center gap-3 border-b border-primary/10">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-xl">precision_manufacturing</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight text-primary">物理AI助手</h2>
+</div>
+<nav class="flex-1 overflow-y-auto p-4 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white font-medium" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>仪表盘</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span>AI 智能出题</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span>教学计划</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>学情分析</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">database</span>
+<span>题库管理</span>
+</a>
+</nav>
+<div class="p-4 border-t border-primary/10">
+<div class="flex items-center gap-3 p-2">
+<div class="size-10 rounded-full bg-primary/20 bg-cover bg-center" data-alt="Portrait of a female high school teacher" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDUvs9zb-ZJhIv1LhyyL2TNDlo2aq5cnoqfVqCS3On0I_HkRKDX_eHMKT5c1mUpXzCkvUzUJHqMQmo0sid-ks3H2aT0MLwlUoQdzBE7LcQuEkI0Z8IwYhiZjIjN2j3-bU2gJRhpf58exRxTknUhbddF5dvWW0nUlznfJgp5VEnKeu5idSAliXmLiiX9LbssqRlOsjHlysfHhP4UEMRWnVqSP4KWqtApI8B_h8IXQhPiJoMvPdk4s_frS8mzbh0pQMxvACzlBj1BwFs')"></div>
+<div class="overflow-hidden">
+<p class="text-sm font-bold truncate">王老师</p>
+<p class="text-xs text-slate-500 truncate">物理教研组长</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-y-auto">
+<!-- Header -->
+<header class="sticky top-0 z-10 flex items-center justify-between bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-8 py-4 border-b border-primary/10">
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-primary/5 border border-primary/10 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="搜索学生报告、题目或知识点..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="size-10 flex items-center justify-center rounded-lg bg-primary/5 text-slate-600 dark:text-slate-300 hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="size-10 flex items-center justify-center rounded-lg bg-primary/5 text-slate-600 dark:text-slate-300 hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-6 w-[1px] bg-primary/20"></div>
+<div class="text-right hidden sm:block">
+<p class="text-sm font-semibold">2023年10月24日</p>
+<p class="text-xs text-slate-500">第二节课 15分钟后开始</p>
+</div>
+</div>
+</header>
+<div class="p-8 space-y-8">
+<!-- Hero Section -->
+<section class="relative overflow-hidden rounded-2xl bg-primary p-8 text-white">
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div>
+<h1 class="text-4xl font-black tracking-tight">欢迎回来，王老师</h1>
+<p class="mt-2 text-primary-100 opacity-90 text-lg">您今天有 3 节课。第一节课将在 45 分钟后开始。</p>
+<div class="mt-6 flex flex-wrap gap-4">
+<div class="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20">
+<span class="material-symbols-outlined text-sm">09:30 - 高二 (1) 班</span>
+<span class="text-sm font-medium">09:30 - 高二 (1) 班</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/20">
+<span class="material-symbols-outlined text-sm">AI 练习草稿已就绪</span>
+<span class="text-sm font-medium">AI 练习草稿已就绪</span>
+</div>
+</div>
+</div>
+<div class="hidden md:block">
+<div class="p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-center">
+<p class="text-sm uppercase tracking-widest opacity-80">下一章节</p>
+<p class="text-2xl font-bold">动力学复习</p>
+</div>
+</div>
+</div>
+<!-- Abstract BG element -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+</section>
+<!-- Key Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white dark:bg-background-dark/50 p-6 rounded-2xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between mb-4">
+<span class="material-symbols-outlined p-2 bg-green-100 text-green-600 rounded-lg">trending_up</span>
+<span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">+2.4%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium uppercase tracking-wider">班级平均分</p>
+<p class="text-3xl font-bold mt-1">82.4%</p>
+</div>
+<div class="bg-white dark:bg-background-dark/50 p-6 rounded-2xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between mb-4">
+<span class="material-symbols-outlined p-2 bg-blue-100 text-blue-600 rounded-lg">assignment_turned_in</span>
+<span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">+5.1%</span>
+</div>
+<p class="text-slate-500 text-sm font-medium uppercase tracking-wider">作业完成率</p>
+<p class="text-3xl font-bold mt-1">92.0%</p>
+</div>
+<div class="bg-white dark:bg-background-dark/50 p-6 rounded-2xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between mb-4">
+<span class="material-symbols-outlined p-2 bg-red-100 text-red-600 rounded-lg">priority_high</span>
+<span class="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded">需关注</span>
+</div>
+<p class="text-slate-500 text-sm font-medium uppercase tracking-wider">最薄弱知识点</p>
+<p class="text-xl font-bold mt-1 text-red-600">受力分析</p>
+</div>
+</div>
+<!-- AI Quick Actions & Progress -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- AI Quick Actions -->
+<div class="lg:col-span-1 space-y-6">
+<h2 class="text-xl font-bold flex items-center gap-2"><span class="material-symbols-outlined text-primary">auto_fix_high</span>AI 快速操作</h2>
+<div class="bg-white dark:bg-background-dark/50 p-6 rounded-2xl border-2 border-primary/20 shadow-xl space-y-4">
+<div class="space-y-2">
+<label class="text-sm font-bold text-slate-700 dark:text-slate-300">按知识点生成题目</label>
+<div class="relative">
+<select class="w-full pl-4 pr-10 py-3 bg-primary/5 border border-primary/10 rounded-xl appearance-none focus:ring-2 focus:ring-primary outline-none">
+<option>牛顿第二定律</option>
+<option>热力学基础</option>
+<option>波动干涉</option>
+<option>圆周运动</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+</div>
+</div>
+<button class="w-full py-3 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"><span class="material-symbols-outlined">bolt</span>快速生成 (10道题)</button>
+<div class="pt-4 border-t border-primary/10">
+<p class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">上传教案</p>
+<label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-primary/20 rounded-xl bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-3xl text-primary mb-2">cloud_upload</span>
+<p class="text-xs font-medium text-slate-600">点击或拖拽 PDF/Word 文件至此处</p>
+<input class="hidden" type="file"/>
+</label>
+</div>
+</div>
+</div>
+<!-- Class Progress Chart -->
+<div class="lg:col-span-2 space-y-6">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-bold flex items-center gap-2"><span class="material-symbols-outlined text-primary">leaderboard</span>班级进度</h2>
+<select class="text-sm bg-transparent border-none focus:ring-0 font-medium text-slate-500 cursor-pointer">
+<option>最近一个月</option>
+<option>最近一季度</option>
+</select>
+</div>
+<div class="bg-white dark:bg-background-dark/50 p-6 rounded-2xl border border-primary/10 h-[340px] relative overflow-hidden flex items-end justify-between gap-2">
+<!-- Simulated Chart Bars -->
+<div class="flex-1 bg-primary/10 rounded-t-lg relative group" style="height: 60%">
+<div class="absolute inset-x-0 bottom-0 bg-primary rounded-t-lg transition-all" style="height: 70%"></div>
+<span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase">第一周</span>
+</div>
+<div class="flex-1 bg-primary/10 rounded-t-lg relative group" style="height: 60%">
+<div class="absolute inset-x-0 bottom-0 bg-primary rounded-t-lg transition-all" style="height: 85%"></div>
+<span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase">第二周</span>
+</div>
+<div class="flex-1 bg-primary/10 rounded-t-lg relative group" style="height: 60%">
+<div class="absolute inset-x-0 bottom-0 bg-primary rounded-t-lg transition-all" style="height: 65%"></div>
+<span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase">第三周</span>
+</div>
+<div class="flex-1 bg-primary/10 rounded-t-lg relative group" style="height: 60%">
+<div class="absolute inset-x-0 bottom-0 bg-primary rounded-t-lg transition-all" style="height: 90%"></div>
+<span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase">第四周</span>
+</div>
+<div class="flex-1 bg-primary/10 rounded-t-lg relative group" style="height: 60%">
+<div class="absolute inset-x-0 bottom-0 bg-primary-300 bg-primary/40 rounded-t-lg transition-all" style="height: 40%"></div>
+<span class="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] text-slate-400 font-bold uppercase">第五周</span>
+</div>
+<!-- Y-axis markers -->
+<div class="absolute left-0 top-0 bottom-0 flex flex-col justify-between py-6 pl-4 pointer-events-none opacity-20 w-full">
+<div class="border-t border-slate-900 dark:border-white w-full"></div>
+<div class="border-t border-slate-900 dark:border-white w-full"></div>
+<div class="border-t border-slate-900 dark:border-white w-full"></div>
+<div class="border-t border-slate-900 dark:border-white w-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Assignments -->
+<div class="space-y-6 pb-8">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-bold flex items-center gap-2"><span class="material-symbols-outlined text-primary">history</span>最近作业</h2>
+<button class="text-sm font-bold text-primary hover:underline">查看全部</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left bg-white dark:bg-background-dark/50 rounded-2xl overflow-hidden border border-primary/10 shadow-sm">
+<thead class="bg-primary/5 text-slate-600 dark:text-slate-400">
+<tr>
+<th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">作业名称</th>
+<th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">班级</th>
+<th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">截止日期</th>
+<th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">状态</th>
+<th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">结果</th>
+<th class="px-6 py-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-primary/5">
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">力与运动实验报告</td>
+<td class="px-6 py-4 text-sm">高二 (1) 班</td>
+<td class="px-6 py-4 text-sm text-slate-500">2023年10月20日</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">已批改</span>
+</td>
+<td class="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">84%</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-slate-400 hover:text-primary">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">动力学随堂测验</td>
+<td class="px-6 py-4 text-sm">高二 (2) 班</td>
+<td class="px-6 py-4 text-sm text-slate-500">2023年10月22日</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">待批改</span>
+</td>
+<td class="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">--</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-slate-400 hover:text-primary">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">圆周运动练习册</td>
+<td class="px-6 py-4 text-sm">高三 (3) 班</td>
+<td class="px-6 py-4 text-sm text-slate-500">2023年10月25日</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">进行中</span>
+</td>
+<td class="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">--</td>
+<td class="px-6 py-4 text-right">
+<button class="material-symbols-outlined text-slate-400 hover:text-primary">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

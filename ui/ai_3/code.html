@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#891fe5",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#1a1121",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "Noto Sans SC", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>学情分析 - 智慧教育管理平台</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="flex min-h-screen">
+<!-- Side Navigation Bar -->
+<aside class="w-64 border-r border-primary/10 bg-white dark:bg-background-dark flex flex-col shrink-0">
+<div class="p-6 flex flex-col gap-6">
+<div class="flex items-center gap-3">
+<div class="size-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-primary/20">
+<img alt="Teacher Avatar" class="w-full h-full object-cover" data-alt="Professional portrait of a male physics teacher" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGHJYsEOqDI5yEuqdBcQUB6mYrCwDhFHJM7RIvJlcHc8trqwrnayGp95Hw_X_JCVg8ZVRG4mgK5MTPv76yku9K8lUkP2GygnnNJ-w7f4yeP2aoZ1WQxXhaDRTbLPyAB-48X-AUI6yv4Bi3UWK50zv0lPo-VbMoin3LpMG6LyEavZ48XAE7Qil4MI0fybqYZAAkpfJ8IXbwWpGetYT5P17TZRs9F0MnD7QRNeDzxt_rB1kHV4iQgsMmy5L5AkOU83U-KQyywNWwGhk"/>
+</div>
+<div class="flex flex-col">
+<h1 class="text-base font-bold text-slate-900 dark:text-slate-100">物理老师</h1>
+<p class="text-xs text-primary font-medium">高二(3)班班主任</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-sm font-medium">首页</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary text-white shadow-lg shadow-primary/20" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-sm font-medium">学情分析</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-sm font-medium">作业管理</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span class="text-sm font-medium">课程资源</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-sm font-medium">个人中心</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-6 border-t border-primary/10">
+<div class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-red-500">logout</span>
+<span class="text-sm font-medium">退出登录</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- Top Navigation -->
+<header class="h-16 border-b border-primary/10 bg-white dark:bg-background-dark px-8 flex items-center justify-between sticky top-0 z-10">
+<div class="flex items-center gap-3 text-primary">
+<span class="material-symbols-outlined font-bold text-3xl">auto_awesome</span>
+<h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">智慧教育管理平台</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="w-64 pl-10 pr-4 py-2 bg-background-light dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/50 transition-all" placeholder="搜索学生、题目或知识点..." type="text"/>
+</div>
+<div class="flex gap-2">
+<button class="p-2 rounded-lg bg-background-light dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 rounded-lg bg-background-light dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+<div class="h-8 w-px bg-primary/10 mx-2"></div>
+<div class="flex items-center gap-3">
+<span class="text-sm font-medium hidden sm:inline">2023-2024 秋季学期</span>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-8 space-y-8 overflow-y-auto">
+<!-- Header Section -->
+<div class="flex flex-col gap-1">
+<h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-slate-100">学情分析</h1>
+<p class="text-slate-500 dark:text-slate-400">实时监控班级学业表现与知识点掌握情况 · 高二(3)班</p>
+</div>
+<!-- AI Insights Alert -->
+<div class="bg-primary/5 border border-primary/20 rounded-xl p-5 flex gap-4 items-start">
+<div class="bg-primary text-white p-2 rounded-lg shrink-0">
+<span class="material-symbols-outlined">smart_toy</span>
+</div>
+<div class="space-y-1">
+<h4 class="text-sm font-bold text-primary">AI 教学建议</h4>
+<p class="text-sm text-slate-700 dark:text-slate-300">近期学生在<span class="font-bold underline decoration-primary/50 mx-1">受力分析</span>上普遍存在短板，导致在复杂力学计算题中失分较多。建议下周增加“多物体受力关联”专题练习，并针对错题集中讲解。</p>
+</div>
+</div>
+<!-- Overview Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">班级平均分</p>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="text-3xl font-bold text-slate-900 dark:text-slate-100">82.5</span>
+<span class="text-xs text-green-500 font-bold flex items-center">
+<span class="material-symbols-outlined text-xs">arrow_upward</span> 2.4%
+                        </span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">最高分</p>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="text-3xl font-bold text-slate-900 dark:text-slate-100">98</span>
+<span class="text-xs text-slate-400 font-medium">张晓华</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">及格率</p>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="text-3xl font-bold text-slate-900 dark:text-slate-100">92%</span>
+<span class="text-xs text-red-500 font-bold flex items-center">
+<span class="material-symbols-outlined text-xs">arrow_downward</span> 1.0%
+                        </span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm hover:shadow-md transition-shadow">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">作业提交率</p>
+<div class="flex items-baseline gap-2 mt-2">
+<span class="text-3xl font-bold text-primary">100%</span>
+<span class="text-xs text-slate-400 font-medium">全部提交</span>
+</div>
+</div>
+</div>
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- Knowledge Point Mastery -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">hub</span>
+                            知识点掌握情况
+                        </h3>
+<span class="text-xs text-slate-400">更新时间: 今日 09:30</span>
+</div>
+<div class="space-y-5">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>牛顿运动定律</span>
+<span>88%</span>
+</div>
+<div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 88%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>万有引力与航天</span>
+<span>75%</span>
+</div>
+<div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 75%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>动量守恒定律</span>
+<span>62%</span>
+</div>
+<div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary/60 rounded-full" style="width: 62%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium">
+<span>机械能守恒</span>
+<span>94%</span>
+</div>
+<div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 94%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Score Distribution -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
+<h3 class="font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">bar_chart</span>
+                        分数段分布
+                    </h3>
+<div class="flex items-end justify-between h-48 px-4 border-b border-primary/5">
+<div class="flex flex-col items-center gap-2 w-12 group">
+<div class="w-full bg-slate-200 dark:bg-slate-800 rounded-t h-[15%] group-hover:bg-primary/40 transition-colors"></div>
+<span class="text-[10px] text-slate-500">&lt;60</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-12 group">
+<div class="w-full bg-slate-200 dark:bg-slate-800 rounded-t h-[45%] group-hover:bg-primary/40 transition-colors"></div>
+<span class="text-[10px] text-slate-500">60-80</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-12 group">
+<div class="w-full bg-primary rounded-t h-[85%]"></div>
+<span class="text-[10px] text-primary font-bold">80-90</span>
+</div>
+<div class="flex flex-col items-center gap-2 w-12 group">
+<div class="w-full bg-slate-200 dark:bg-slate-800 rounded-t h-[55%] group-hover:bg-primary/40 transition-colors"></div>
+<span class="text-[10px] text-slate-500">90-100</span>
+</div>
+</div>
+<p class="text-center text-xs text-slate-400 mt-4">共有 45 名学生参与本次测试</p>
+</div>
+</div>
+<!-- Error List and Student Progress Table -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- High-Frequency Error List -->
+<div class="lg:col-span-1 bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm flex flex-col">
+<h3 class="font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-red-500">error</span>
+                        高频错题榜
+                    </h3>
+<div class="space-y-4 flex-1">
+<div class="flex items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
+<div class="size-8 rounded flex items-center justify-center bg-red-500 text-white font-bold text-xs">1</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold truncate">受力分析综合题 Q7</p>
+<p class="text-[10px] text-slate-500">知识点: 摩擦力/动力学</p>
+</div>
+<div class="text-right">
+<p class="text-xs font-black text-red-500">42%</p>
+<p class="text-[9px] text-slate-400">错误率</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<div class="size-8 rounded flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-600 font-bold text-xs">2</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold truncate">圆周运动受力判断 Q12</p>
+<p class="text-[10px] text-slate-500">知识点: 向心力</p>
+</div>
+<div class="text-right">
+<p class="text-xs font-bold">35%</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+<div class="size-8 rounded flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-600 font-bold text-xs">3</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold truncate">变功求功法 Q3</p>
+<p class="text-[10px] text-slate-500">知识点: 动能定理</p>
+</div>
+<div class="text-right">
+<p class="text-xs font-bold">28%</p>
+</div>
+</div>
+</div>
+<button class="mt-4 w-full py-2 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors">
+                        查看全部错题
+                    </button>
+</div>
+<!-- Student Individual Progress List -->
+<div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">groups</span>
+                            学生个体发展追踪
+                        </h3>
+<div class="flex gap-2">
+<select class="text-xs bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:ring-1 focus:ring-primary/50 py-1">
+<option>成绩降序</option>
+<option>进步最快</option>
+<option>需关注</option>
+</select>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="text-slate-400 text-xs border-b border-primary/5">
+<tr>
+<th class="pb-3 font-medium">学生姓名</th>
+<th class="pb-3 font-medium">最近得分</th>
+<th class="pb-3 font-medium">成长趋势</th>
+<th class="pb-3 font-medium">状态标签</th>
+<th class="pb-3 text-right font-medium">详情</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="border-b border-primary/5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="py-4 font-bold">陈同学</td>
+<td class="py-4">96</td>
+<td class="py-4">
+<div class="flex items-center gap-1 text-green-500 font-bold">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span>+5</span>
+</div>
+</td>
+<td class="py-4">
+<span class="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-bold">稳步提升</span>
+</td>
+<td class="py-4 text-right">
+<button class="material-symbols-outlined text-slate-300 group-hover:text-primary">chevron_right</button>
+</td>
+</tr>
+<tr class="border-b border-primary/5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="py-4 font-bold">李同学</td>
+<td class="py-4">88</td>
+<td class="py-4">
+<div class="flex items-center gap-1 text-green-500 font-bold">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span>+12</span>
+</div>
+</td>
+<td class="py-4">
+<span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-bold">进步明显</span>
+</td>
+<td class="py-4 text-right">
+<button class="material-symbols-outlined text-slate-300 group-hover:text-primary">chevron_right</button>
+</td>
+</tr>
+<tr class="border-b border-primary/5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="py-4 font-bold">王同学</td>
+<td class="py-4 text-red-500 font-bold">58</td>
+<td class="py-4">
+<div class="flex items-center gap-1 text-red-500 font-bold">
+<span class="material-symbols-outlined text-sm">trending_down</span>
+<span>-8</span>
+</div>
+</td>
+<td class="py-4">
+<span class="px-2 py-1 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold">需关注</span>
+</td>
+<td class="py-4 text-right">
+<button class="material-symbols-outlined text-slate-300 group-hover:text-primary">chevron_right</button>
+</td>
+</tr>
+<tr class="border-b border-primary/5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="py-4 font-bold">赵同学</td>
+<td class="py-4 font-bold">92</td>
+<td class="py-4">
+<div class="flex items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined text-sm">trending_flat</span>
+<span>0</span>
+</div>
+</td>
+<td class="py-4">
+<span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-bold">表现稳定</span>
+</td>
+<td class="py-4 text-right">
+<button class="material-symbols-outlined text-slate-300 group-hover:text-primary">chevron_right</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
