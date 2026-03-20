@@ -1,10 +1,19 @@
-# Wrangler 本地开发环境变量（复制为 .dev.vars，不提交 git）
+# 本地开发密钥模板 — 复制为 .dev.vars 并填入真实值
+# .dev.vars 已加入 .gitignore，不会被提交
+
+# Supabase
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
-ZHIPU_API_KEY=your-zhipu-api-key
-DASHSCOPE_API_KEY=your-dashscope-api-key
-R2_ACCESS_KEY_ID=your-r2-access-key-id
-R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
-R2_ACCOUNT_ID=your-cloudflare-account-id
-FRONTEND_URL=http://localhost:3000
+SUPABASE_ANON_KEY=eyJ...
+
+# 智谱 AI（GLM）
+# 申请地址: https://open.bigmodel.cn/usercenter/apikeys
+ZHIPU_API_KEY=your_zhipu_api_key
+
+# 阿里云百炼（Qwen / Embedding）
+# 申请地址: https://dashscope.console.aliyun.com/apiKey
+DASHSCOPE_API_KEY=your_dashscope_api_key
+
+# Cloudflare R2（本地开发用 S3 兼容模式）
+R2_ACCOUNT_ID=your_cloudflare_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key
+R2_SECRET_ACCESS_KEY=your_r2_secret_key
