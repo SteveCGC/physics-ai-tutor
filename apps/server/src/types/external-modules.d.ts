@@ -42,3 +42,94 @@ declare module "fflate" {
     data: Uint8Array
   ): Record<string, Uint8Array>;
 }
+
+declare module "@ai-sdk/openai" {
+  export type OpenAICompatibleProvider = {
+    textEmbeddingModel(modelId: string): unknown;
+  };
+
+  export function createOpenAI(config: {
+    baseURL: string;
+    apiKey: string;
+  }): OpenAICompatibleProvider;
+}
+
+declare module "@mastra/core" {
+  export class Mastra {
+    constructor(config: {
+      agents?: Record<string, unknown>;
+      workflows?: Record<string, unknown>;
+      server?: {
+        middleware?: Array<unknown>;
+      };
+    });
+
+    getAgent<T = any>(name: string): T;
+  }
+}
+
+declare module "@mastra/core/agent" {
+  export class Agent {
+    constructor(config: {
+      name: string;
+      description?: string;
+      model: string;
+      instructions: string;
+    });
+
+    generate(
+      prompt: string,
+      options?: {
+        structuredOutput?: {
+          schema: unknown;
+        };
+        maxSteps?: number;
+      }
+    ): Promise<{
+      object: Promise<any>;
+    }>;
+  }
+}
+
+declare module "@mastra/core/workflows" {
+  export type StepExecutionContext<TInput = unknown> = {
+    inputData: TInput;
+    mastra: {
+      getAgent<T = any>(name: string): T;
+    };
+  };
+
+  export type StepConfig<TInput = unknown, TOutput = unknown> = {
+    id: string;
+    description?: string;
+    inputSchema: unknown;
+    outputSchema: unknown;
+    execute(context: StepExecutionContext<TInput>): Promise<TOutput>;
+  };
+
+  export function createStep<TInput = unknown, TOutput = unknown>(
+    config: StepConfig<TInput, TOutput>
+  ): unknown;
+
+  export type WorkflowBuilder = {
+    then(step: unknown): WorkflowBuilder;
+    commit(): unknown;
+  };
+
+  export function createWorkflow(config: {
+    id: string;
+    inputSchema: unknown;
+    outputSchema: unknown;
+  }): WorkflowBuilder;
+}
+
+declare module "@mastra/hono" {
+  export class MastraServer {
+    constructor(config: {
+      mastra: unknown;
+      app: unknown;
+    });
+
+    init(): Promise<void>;
+  }
+}
