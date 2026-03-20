@@ -44,9 +44,13 @@ declare module "fflate" {
 }
 
 declare module "@ai-sdk/openai" {
-  export type OpenAICompatibleProvider = {
+  export type LanguageModel = unknown;
+
+  export interface OpenAICompatibleProvider {
+    (modelId: string): LanguageModel;
+    chat(modelId: string): LanguageModel;
     textEmbeddingModel(modelId: string): unknown;
-  };
+  }
 
   export function createOpenAI(config: {
     baseURL: string;
@@ -81,7 +85,7 @@ declare module "@mastra/core/agent" {
     constructor(config: {
       name: string;
       description?: string;
-      model: string;
+      model: string | unknown;
       instructions: string;
       tools?: Record<string, AgentTool>;
     });

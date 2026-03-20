@@ -44,8 +44,8 @@ export function createMastra(env: MastraEnv) {
   assertMastraEnv(env);
 
   const questionGenerator = createQuestionGeneratorAgent(env);
-  const qualityChecker = createQualityCheckerAgent();
-  const lessonParser = createLessonParserAgent();
+  const qualityChecker = createQualityCheckerAgent(env);
+  const lessonParser = createLessonParserAgent(env);
 
   const generateExam = createGenerateExamWorkflow(env);
   const parseLessonPlan = createParseLessonPlanWorkflow();

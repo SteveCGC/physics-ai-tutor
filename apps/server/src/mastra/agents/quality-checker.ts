@@ -1,13 +1,14 @@
 import { Agent } from "@mastra/core/agent";
 
-import { zhipuModel } from "../models";
+import { createQualityCheckerModel } from "../models";
 import { validateQuestionTool } from "../tools";
+import type { Bindings } from "../../types";
 
-export function createQualityCheckerAgent() {
+export function createQualityCheckerAgent(env: Pick<Bindings, "ZHIPU_API_KEY">) {
   return new Agent({
     name: "qualityChecker",
     description: "逐题审查高中物理题目的正确性、清晰度和课标适配性。",
-    model: zhipuModel,
+    model: createQualityCheckerModel(env),
     tools: {
       validateQuestion: validateQuestionTool,
     },

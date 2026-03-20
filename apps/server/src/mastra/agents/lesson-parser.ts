@@ -1,12 +1,13 @@
 import { Agent } from "@mastra/core/agent";
 
-import { zhipuModel } from "../models";
+import { createLessonParserModel } from "../models";
+import type { Bindings } from "../../types";
 
-export function createLessonParserAgent() {
+export function createLessonParserAgent(env: Pick<Bindings, "DASHSCOPE_API_KEY">) {
   return new Agent({
     name: "lessonParser",
     description: "P1 占位：解析教案并抽取章节、目标、知识点和题型建议。",
-    model: zhipuModel,
+    model: createLessonParserModel(env),
     instructions: `
 // P1 功能，当前版本仅作占位，parse-lesson-plan workflow 在 P1 激活
 你是高中物理教案解析助手。你的任务是从教案文本中提取结构化教学信息，并与系统知识点体系对齐。

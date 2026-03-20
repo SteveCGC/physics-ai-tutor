@@ -2,21 +2,22 @@ import { Agent } from "@mastra/core/agent";
 
 import type { DatabaseEnv } from "../../db/client";
 import { knowledgePointsTree } from "../constants/knowledge-points";
-import { zhipuModel } from "../models";
+import { createQuestionGeneratorModel } from "../models";
 import {
   createSearchQuestionBankTool,
   getKnowledgePointsTool,
 } from "../tools";
+import type { Bindings } from "../../types";
 
 const knowledgePointPrompt = knowledgePointsTree
   .map((group) => `${group.name}：${group.subPoints.join("、")}`)
   .join("\n");
 
-export function createQuestionGeneratorAgent(env: DatabaseEnv) {
+export function createQuestionGeneratorAgent(env: DatabaseEnv & Pick<Bindings, "ZHIPU_API_KEY">) {
   return new Agent({
     name: "questionGenerator",
     description: "根据指定知识点、题型和难度生成高中物理题目。",
-    model: zhipuModel,
+    model: createQuestionGeneratorModel(env),
     tools: {
       searchQuestionBank: createSearchQuestionBankTool(env),
       getKnowledgePoints: getKnowledgePointsTool,

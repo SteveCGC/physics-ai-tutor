@@ -352,7 +352,7 @@ export async function runGenerateExamWorkflow(options: {
   const mastra = new Mastra({
     agents: {
       questionGenerator: createQuestionGeneratorAgent(options.env),
-      qualityChecker: createQualityCheckerAgent(),
+      qualityChecker: createQualityCheckerAgent(options.env),
     },
   });
 
