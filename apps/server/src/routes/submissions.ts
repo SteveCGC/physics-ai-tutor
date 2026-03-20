@@ -29,7 +29,7 @@ const createSubmissionSchema = z.object({
       z.object({
         questionId: z.string().uuid(),
         studentAnswer: z.string(),
-        attachmentUrl: z.string().url().optional(),
+        attachmentUrl: z.string().min(1).optional(),
       })
     )
     .min(1),

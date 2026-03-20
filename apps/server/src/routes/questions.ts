@@ -199,6 +199,7 @@ questionsRoute.post("/:id/regenerate", async (c) => {
         knowledgePoints: generatedQuestion.knowledgePoints,
         difficulty: generatedQuestion.difficulty,
         score: generatedQuestion.score,
+        qualityFlags: generatedQuestion.qualityFlags ?? null,
         source: "ai",
       })
       .where(and(eq(questions.id, record.question.id), eq(questions.examId, record.exam.id)))

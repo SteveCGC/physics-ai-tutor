@@ -3,21 +3,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-white shadow",
-        secondary: "border-transparent bg-primary-soft text-primary",
-        destructive: "border-transparent bg-danger text-white shadow",
-        outline: "text-text-default border-border",
+        knowledge: "border-border bg-bg-elevated text-text-default",
         success: "border-transparent bg-success-soft text-success",
         warning: "border-transparent bg-warning-soft text-warning",
+        danger: "border-transparent bg-danger-soft text-danger",
         info: "border-transparent bg-info-soft text-info",
+        ai: "border-transparent bg-primary-soft text-primary",
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "knowledge",
     },
   }
 );

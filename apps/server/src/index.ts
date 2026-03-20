@@ -7,8 +7,10 @@ import { authMiddleware } from "./middleware/auth";
 import classesRoute from "./routes/classes";
 import examsRoute from "./routes/exams";
 import gradingRoute from "./routes/grading";
+import meRoute from "./routes/me";
 import questionsRoute from "./routes/questions";
 import submissionsRoute from "./routes/submissions";
+import teacherRoute from "./routes/teacher";
 import uploadRoute from "./routes/upload";
 import type { AppContext } from "./types";
 
@@ -56,8 +58,10 @@ app.get("/api/v1", (c) => {
 app.route("/api/classes", classesRoute);
 app.route("/api/exams", examsRoute);
 app.route("/api/questions", questionsRoute);
+app.route("/api", meRoute);
 app.route("/api", submissionsRoute);
 app.route("/api", gradingRoute);
+app.route("/api", teacherRoute);
 app.route("/api", uploadRoute);
 
 // 404 处理

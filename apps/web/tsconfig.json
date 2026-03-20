@@ -19,7 +19,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@physics-ai-tutor/shared": ["../../packages/shared/src/index.ts"]
+      "@physics-ai-tutor/shared": ["../../packages/shared/src/index.ts"],
+      "swr": ["./src/vendor/swr.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

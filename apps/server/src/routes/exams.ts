@@ -2,14 +2,16 @@ import {
   CreateExamSchema,
   CreateManualQuestionSchema,
   ExamIdParamSchema,
+  GenerateExamRequestSchema,
   ListExamsQuerySchema,
   UpdateExamSchema,
 } from "@physics-ai-tutor/shared";
-import { and, asc, count, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 
-import { classes, exams, questions } from "../db/schema";
+import { classes, exams, questions, submissions } from "../db/schema";
+import { generateQuestionDraft } from "../lib/question-generator";
 import { requireRole } from "../middleware/role";
 import type { AppContext } from "../types";
 
@@ -63,6 +65,77 @@ async function getExamQuestions(
     .from(questions)
     .where(eq(questions.examId, examId))
     .orderBy(asc(questions.orderIndex));
+}
+
+async function enrichTeacherExamList(
+  db: Pick<AppContext["Variables"]["db"], "select">,
+  items: Array<typeof exams.$inferSelect>
+) {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const examIds = items.map((item) => item.id);
+  const [questionCounts, pendingGradeCounts] = await Promise.all([
+    db
+      .select({
+        examId: questions.examId,
+        count: count(questions.id),
+      })
+      .from(questions)
+      .where(inArray(questions.examId, examIds))
+      .groupBy(questions.examId),
+    db
+      .select({
+        examId: submissions.examId,
+        count: count(submissions.id),
+      })
+      .from(submissions)
+      .where(
+        and(
+          inArray(submissions.examId, examIds),
+          eq(submissions.status, "pending_review")
+        )
+      )
+      .groupBy(submissions.examId),
+  ]);
+
+  const questionCountMap = new Map(questionCounts.map((item) => [item.examId, Number(item.count)]));
+  const pendingGradeCountMap = new Map(
+    pendingGradeCounts.map((item) => [item.examId, Number(item.count)])
+  );
+
+  return items.map((item) => ({
+    ...item,
+    questionCount: questionCountMap.get(item.id) ?? 0,
+    pendingGradeCount: pendingGradeCountMap.get(item.id) ?? 0,
+  }));
+}
+
+async function enrichStudentExamList(
+  db: Pick<AppContext["Variables"]["db"], "select">,
+  items: Array<typeof exams.$inferSelect>,
+  studentId: string
+) {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const examIds = items.map((item) => item.id);
+  const studentSubmissions = await db
+    .select({
+      examId: submissions.examId,
+      status: submissions.status,
+    })
+    .from(submissions)
+    .where(and(eq(submissions.studentId, studentId), inArray(submissions.examId, examIds)));
+
+  const submissionMap = new Map(studentSubmissions.map((item) => [item.examId, item.status]));
+
+  return items.map((item) => ({
+    ...item,
+    submissionStatus: submissionMap.get(item.id) ?? null,
+  }));
 }
 
 examsRoute.use("*", requireRole("teacher", "student"));
@@ -129,11 +202,13 @@ examsRoute.get("/", async (c) => {
         .offset(offset),
     ]);
 
+    const enrichedItems = await enrichTeacherExamList(db, items);
+
     return c.json({
       total: Number(totalResult[0]?.count ?? 0),
       page,
       pageSize,
-      items,
+      items: enrichedItems,
     });
   }
 
@@ -156,16 +231,18 @@ examsRoute.get("/", async (c) => {
       .select()
       .from(exams)
       .where(and(...filters))
-      .orderBy(desc(exams.publishedAt), desc(exams.createdAt))
+      .orderBy(asc(exams.deadline), desc(exams.publishedAt), desc(exams.createdAt))
       .limit(pageSize)
       .offset(offset),
   ]);
+
+  const enrichedItems = await enrichStudentExamList(db, items, profile.id);
 
   return c.json({
     total: Number(totalResult[0]?.count ?? 0),
     page,
     pageSize,
-    items,
+    items: enrichedItems,
   });
 });
 
@@ -225,6 +302,130 @@ examsRoute.post("/:id/questions", requireRole("teacher"), async (c) => {
   await db.update(exams).set({ totalScore }).where(eq(exams.id, exam.id));
 
   return c.json(createdQuestion, 201);
+});
+
+examsRoute.post("/:id/generate", requireRole("teacher"), async (c) => {
+  const params = ExamIdParamSchema.safeParse(c.req.param());
+  if (!params.success) {
+    return jsonError(getFirstZodError(params.error), 400, "BAD_REQUEST");
+  }
+
+  const body = await c.req.json().catch(() => null);
+  const result = GenerateExamRequestSchema.safeParse(body);
+  if (!result.success) {
+    return jsonError(getFirstZodError(result.error), 400, "BAD_REQUEST");
+  }
+
+  const exam = await getExamById(c, params.data.id);
+  if (!exam) {
+    return jsonError("试卷不存在", 404, "EXAM_NOT_FOUND");
+  }
+
+  const profile = c.get("profile");
+  if (exam.teacherId !== profile.id) {
+    return jsonError("无权操作该试卷", 403, "FORBIDDEN");
+  }
+
+  if (exam.status !== "draft") {
+    return jsonError("只有草稿试卷允许生成题目", 400, "EXAM_NOT_EDITABLE");
+  }
+
+  const db = c.get("db");
+  const total = result.data.totalQuestions;
+  const questionTypes = result.data.questionTypes;
+  const difficulty = result.data.difficulty ?? 3;
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    start(controller) {
+      const send = (event: string, data: unknown) => {
+        controller.enqueue(encoder.encode(`event: ${event}\n`));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+      };
+
+      const run = async () => {
+        try {
+          await db.delete(questions).where(eq(questions.examId, exam.id));
+
+          send("step", {
+            key: "prepare",
+            status: "completed",
+            message: "草稿试卷已创建，开始生成题目。",
+            progress: 15,
+          });
+
+          for (let index = 0; index < total; index += 1) {
+            const type = questionTypes[index % questionTypes.length];
+            const point = result.data.knowledgePoints[index % result.data.knowledgePoints.length];
+            const secondaryPoint =
+              result.data.knowledgePoints[(index + 1) % result.data.knowledgePoints.length];
+            const generated = generateQuestionDraft({
+              knowledgePoints: [point, secondaryPoint],
+              type,
+              difficulty,
+            });
+
+            const [createdQuestion] = await db
+              .insert(questions)
+              .values({
+                examId: exam.id,
+                type: generated.type,
+                content: generated.content,
+                options: generated.options ?? null,
+                answer: generated.answer,
+                acceptedAnswers: generated.acceptedAnswers ?? null,
+                explanation: generated.explanation ?? null,
+                knowledgePoints: generated.knowledgePoints,
+                difficulty: generated.difficulty,
+                score: generated.score,
+                orderIndex: index + 1,
+                source: "ai",
+                qualityFlags: generated.qualityFlags ?? null,
+              })
+              .returning();
+
+            send("questions", {
+              question: createdQuestion,
+              progress: 15 + Math.round(((index + 1) / total) * 65),
+              message: `已生成第 ${index + 1} 题`,
+            });
+          }
+
+          const totalScore = await calculateExamTotalScore(db, exam.id);
+          await db.update(exams).set({ totalScore }).where(eq(exams.id, exam.id));
+
+          send("step", {
+            key: "quality_check",
+            status: "completed",
+            message: "质量检查完成",
+            progress: 92,
+          });
+          send("done", {
+            examId: exam.id,
+            progress: 100,
+            message: "题目生成完成",
+          });
+          controller.close();
+        } catch (error) {
+          console.error("[exam.generate]", error);
+          send("error", {
+            message: error instanceof Error ? error.message : "生成失败",
+          });
+          controller.close();
+        }
+      };
+
+      void run();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+    },
+  });
 });
 
 examsRoute.get("/:id", async (c) => {
@@ -308,6 +509,7 @@ examsRoute.patch("/:id", requireRole("teacher"), async (c) => {
   const db = c.get("db");
   const updatePayload: {
     title?: string;
+    classId?: string;
     deadline?: Date | null;
     status?: "draft" | "published" | "archived";
     totalScore?: number;
@@ -316,6 +518,15 @@ examsRoute.patch("/:id", requireRole("teacher"), async (c) => {
 
   if (result.data.title !== undefined) {
     updatePayload.title = result.data.title;
+  }
+
+  if (result.data.classId !== undefined) {
+    const ownedClass = await getOwnedClass(c, result.data.classId);
+    if (!ownedClass) {
+      return jsonError("班级不存在或无权限操作", 403, "FORBIDDEN");
+    }
+
+    updatePayload.classId = result.data.classId;
   }
 
   if (result.data.deadline !== undefined) {

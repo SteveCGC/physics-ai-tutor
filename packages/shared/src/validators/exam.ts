@@ -22,6 +22,7 @@ export const ExamIdParamSchema = z.object({
 export const UpdateExamSchema = z
   .object({
     title: z.string().min(1, "试卷标题不能为空").max(100).optional(),
+    classId: z.string().uuid("班级ID格式错误").optional(),
     deadline: z.string().datetime("截止时间格式错误").optional().nullable(),
     status: ExamStatusSchema.optional(),
   })

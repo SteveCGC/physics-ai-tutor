@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { QualityFlag } from "@physics-ai-tutor/shared";
 import {
   type AnyPgColumn,
   boolean,
@@ -141,7 +142,7 @@ export const questions = pgTable(
     score: integer("score").notNull(),
     orderIndex: integer("order_index").notNull(),
     source: text("source").notNull().default("ai"),
-    qualityFlags: jsonb("quality_flags").$type<string[]>(),
+    qualityFlags: jsonb("quality_flags").$type<QualityFlag[]>(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),
