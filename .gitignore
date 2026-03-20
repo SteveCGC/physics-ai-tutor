@@ -20,6 +20,7 @@ apps/server/.dev.vars
 
 # AI 编排器审查日志（本地生成，不提交）
 ai/review-logs/
+review-logs/
 
 # TypeScript 构建产物
 *.tsbuildinfo
