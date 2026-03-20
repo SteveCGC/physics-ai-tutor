@@ -2,7 +2,6 @@ import {
   CreateExamSchema,
   CreateManualQuestionSchema,
   ExamIdParamSchema,
-  GenerateExamRequestSchema,
   ListExamsQuerySchema,
   UpdateExamSchema,
 } from "@physics-ai-tutor/shared";
@@ -11,7 +10,7 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 
 import { classes, exams, questions, submissions } from "../db/schema";
-import { generateQuestionDraft } from "../lib/question-generator";
+import { runGenerateExamWorkflow } from "../mastra/workflows";
 import { requireRole } from "../middleware/role";
 import type { AppContext } from "../types";
 
@@ -25,6 +24,16 @@ function jsonError(message: string, status: number, code?: string) {
 function getFirstZodError(error: z.ZodError) {
   return error.issues[0]?.message ?? "请求参数错误";
 }
+
+const GenerateExamBodySchema = z.object({
+  knowledgePoints: z.array(z.string().trim().min(1)).min(1, "至少提供一个知识点"),
+  questionTypes: z
+    .array(z.enum(["choice", "fill", "calculation", "short_answer"]))
+    .min(1, "至少提供一种题型"),
+  difficulty: z.number().int().min(1).max(5).default(3),
+  count: z.number().int().min(1).max(30).default(10),
+  totalQuestions: z.number().int().min(1).max(30).optional(),
+});
 
 async function getExamById(c: RouteContext, id: string) {
   const db = c.get("db");
@@ -311,7 +320,20 @@ examsRoute.post("/:id/generate", requireRole("teacher"), async (c) => {
   }
 
   const body = await c.req.json().catch(() => null);
-  const result = GenerateExamRequestSchema.safeParse(body);
+  const normalizedBody =
+    body && typeof body === "object" && body !== null
+      ? {
+          ...body,
+          count:
+            "count" in body && typeof body.count === "number"
+              ? body.count
+              : "totalQuestions" in body && typeof body.totalQuestions === "number"
+                ? body.totalQuestions
+                : undefined,
+        }
+      : body;
+
+  const result = GenerateExamBodySchema.safeParse(normalizedBody);
   if (!result.success) {
     return jsonError(getFirstZodError(result.error), 400, "BAD_REQUEST");
   }
@@ -331,9 +353,48 @@ examsRoute.post("/:id/generate", requireRole("teacher"), async (c) => {
   }
 
   const db = c.get("db");
-  const total = result.data.totalQuestions;
-  const questionTypes = result.data.questionTypes;
-  const difficulty = result.data.difficulty ?? 3;
+  const workflowInput = {
+    examId: exam.id,
+    knowledgePoints: result.data.knowledgePoints,
+    questionTypes: result.data.questionTypes,
+    difficulty: result.data.difficulty,
+    count: result.data.count,
+  };
+  const acceptsSse = c.req.header("accept")?.includes("text/event-stream") ?? false;
+
+  await db.delete(questions).where(eq(questions.examId, exam.id));
+
+  const finalizeExamScore = async () => {
+    const totalScore = await calculateExamTotalScore(db, exam.id);
+    await db.update(exams).set({ totalScore }).where(eq(exams.id, exam.id));
+    return totalScore;
+  };
+
+  if (!acceptsSse) {
+    try {
+      const workflowResult = await runGenerateExamWorkflow({
+        env: c.env,
+        input: workflowInput,
+      });
+
+      await finalizeExamScore();
+
+      return c.json({
+        examId: workflowResult.examId,
+        questionCount: workflowResult.questionCount,
+        questionIds: workflowResult.questionIds,
+        questions: workflowResult.questions,
+      });
+    } catch (error) {
+      console.error("[exam.generate]", error);
+      return jsonError(
+        error instanceof Error ? error.message : "生成失败",
+        500,
+        "EXAM_GENERATION_FAILED"
+      );
+    }
+  }
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -345,70 +406,31 @@ examsRoute.post("/:id/generate", requireRole("teacher"), async (c) => {
 
       const run = async () => {
         try {
-          await db.delete(questions).where(eq(questions.examId, exam.id));
+          const workflowResult = await runGenerateExamWorkflow({
+            env: c.env,
+            input: workflowInput,
+            onEvent(event) {
+              if (event.event === "step") {
+                send("step", event);
+                return;
+              }
 
-          send("step", {
-            key: "prepare",
-            status: "completed",
-            message: "草稿试卷已创建，开始生成题目。",
-            progress: 15,
+              send("questions", event);
+            },
           });
 
-          for (let index = 0; index < total; index += 1) {
-            const type = questionTypes[index % questionTypes.length];
-            const point = result.data.knowledgePoints[index % result.data.knowledgePoints.length];
-            const secondaryPoint =
-              result.data.knowledgePoints[(index + 1) % result.data.knowledgePoints.length];
-            const generated = generateQuestionDraft({
-              knowledgePoints: [point, secondaryPoint],
-              type,
-              difficulty,
-            });
+          await finalizeExamScore();
 
-            const [createdQuestion] = await db
-              .insert(questions)
-              .values({
-                examId: exam.id,
-                type: generated.type,
-                content: generated.content,
-                options: generated.options ?? null,
-                answer: generated.answer,
-                acceptedAnswers: generated.acceptedAnswers ?? null,
-                explanation: generated.explanation ?? null,
-                knowledgePoints: generated.knowledgePoints,
-                difficulty: generated.difficulty,
-                score: generated.score,
-                orderIndex: index + 1,
-                source: "ai",
-                qualityFlags: generated.qualityFlags ?? null,
-              })
-              .returning();
-
-            send("questions", {
-              question: createdQuestion,
-              progress: 15 + Math.round(((index + 1) / total) * 65),
-              message: `已生成第 ${index + 1} 题`,
-            });
-          }
-
-          const totalScore = await calculateExamTotalScore(db, exam.id);
-          await db.update(exams).set({ totalScore }).where(eq(exams.id, exam.id));
-
-          send("step", {
-            key: "quality_check",
-            status: "completed",
-            message: "质量检查完成",
-            progress: 92,
-          });
           send("done", {
-            examId: exam.id,
-            progress: 100,
-            message: "题目生成完成",
+            event: "done",
+            examId: workflowResult.examId,
+            questionCount: workflowResult.questionCount,
           });
           controller.close();
         } catch (error) {
           console.error("[exam.generate]", error);
           send("error", {
+            event: "error",
             message: error instanceof Error ? error.message : "生成失败",
           });
           controller.close();

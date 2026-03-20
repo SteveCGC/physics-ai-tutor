@@ -69,16 +69,32 @@ declare module "@mastra/core" {
 }
 
 declare module "@mastra/core/agent" {
+  export type AgentTool = {
+    id?: string;
+    description?: string;
+    inputSchema?: unknown;
+    outputSchema?: unknown;
+    execute?: (...args: any[]) => Promise<any>;
+  };
+
   export class Agent {
     constructor(config: {
       name: string;
       description?: string;
       model: string;
       instructions: string;
+      tools?: Record<string, AgentTool>;
     });
 
     generate(
-      prompt: string,
+      input:
+        | string
+        | {
+            messages: Array<{
+              role: "user" | "assistant" | "system";
+              content: string;
+            }>;
+          },
       options?: {
         structuredOutput?: {
           schema: unknown;
@@ -86,9 +102,36 @@ declare module "@mastra/core/agent" {
         maxSteps?: number;
       }
     ): Promise<{
-      object: Promise<any>;
+      object?: Promise<any> | string;
+      text?: string;
+      content?: string;
+      output?: string;
+      response?: string;
     }>;
   }
+}
+
+declare module "@mastra/core/tools" {
+  export type ToolExecutionContext<TContext = unknown> = {
+    context: TContext;
+  };
+
+  export type ToolConfig<TContext = unknown, TOutput = unknown> = {
+    id: string;
+    description: string;
+    inputSchema: unknown;
+    outputSchema: unknown;
+    execute(
+      context: ToolExecutionContext<TContext>,
+      options?: {
+        abortSignal?: AbortSignal;
+      }
+    ): Promise<TOutput>;
+  };
+
+  export function createTool<TContext = unknown, TOutput = unknown>(
+    config: ToolConfig<TContext, TOutput>
+  ): ToolConfig<TContext, TOutput>;
 }
 
 declare module "@mastra/core/workflows" {
@@ -112,6 +155,7 @@ declare module "@mastra/core/workflows" {
   ): unknown;
 
   export type WorkflowBuilder = {
+    step(step: unknown): WorkflowBuilder;
     then(step: unknown): WorkflowBuilder;
     commit(): unknown;
   };

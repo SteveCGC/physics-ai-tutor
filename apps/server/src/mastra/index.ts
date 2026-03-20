@@ -1,15 +1,16 @@
 import { Mastra } from "@mastra/core";
 
+import type { DatabaseEnv } from "../db/client";
 import type { Bindings } from "../types";
 import {
   createLessonParserAgent,
   createQualityCheckerAgent,
   createQuestionGeneratorAgent,
-} from "./agents";
+} from "./agents/index";
 import { createEmbeddingModel } from "./models";
 import { createGenerateExamWorkflow, createParseLessonPlanWorkflow } from "./workflows";
 
-type MastraEnv = Pick<Bindings, "ZHIPU_API_KEY" | "DASHSCOPE_API_KEY">;
+type MastraEnv = Pick<Bindings, "ZHIPU_API_KEY" | "DASHSCOPE_API_KEY"> & DatabaseEnv;
 
 export type MastraRegistry = {
   agents: {
@@ -42,11 +43,11 @@ function assertMastraEnv(env: MastraEnv) {
 export function createMastra(env: MastraEnv) {
   assertMastraEnv(env);
 
-  const questionGenerator = createQuestionGeneratorAgent();
+  const questionGenerator = createQuestionGeneratorAgent(env);
   const qualityChecker = createQualityCheckerAgent();
   const lessonParser = createLessonParserAgent();
 
-  const generateExam = createGenerateExamWorkflow();
+  const generateExam = createGenerateExamWorkflow(env);
   const parseLessonPlan = createParseLessonPlanWorkflow();
 
   // Embedding 模型在 P1 激活；MVP 仅完成配置，避免后续接入时重复改造。
