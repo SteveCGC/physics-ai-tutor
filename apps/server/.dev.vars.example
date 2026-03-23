@@ -2,8 +2,11 @@
 # .dev.vars 已加入 .gitignore，不会被提交
 
 # Supabase
+# Project URL 和 Anon Key：Supabase 控制台 → Settings → API Keys
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=eyJ...
+# 数据库直连地址（Session 模式，端口 5432）：Supabase 控制台 → Connect → Session
+SUPABASE_DATABASE_URL=postgresql://postgres.xxxx:[PASSWORD]@aws-0-xx.pooler.supabase.com:5432/postgres
 
 # 智谱 AI（GLM）
 # 申请地址: https://open.bigmodel.cn/usercenter/apikeys

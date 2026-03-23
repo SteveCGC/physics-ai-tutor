@@ -6,6 +6,7 @@
     "dev": "wrangler dev --port 4000",
     "build": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
+    "db:migrate": "bash scripts/db-migrate.sh",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts"
   },
