@@ -26,7 +26,7 @@ export const parseLessonPlanWorkflow = createWorkflow({
   inputSchema: parseLessonPlanInputSchema,
   outputSchema: parseLessonPlanOutputSchema,
 })
-  .step(parseLessonPlanPlaceholderStep)
+  .then(parseLessonPlanPlaceholderStep)
   .commit();
 
 export function createParseLessonPlanWorkflow() {

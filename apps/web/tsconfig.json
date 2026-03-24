@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -18,11 +22,25 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@physics-ai-tutor/shared": ["../../packages/shared/src/index.ts"],
-      "swr": ["./src/vendor/swr.ts"]
-    }
+      "@/*": [
+        "./src/*"
+      ],
+      "@physics-ai-tutor/shared": [
+        "../../packages/shared/src/index.ts"
+      ],
+      "swr": [
+        "./src/vendor/swr.ts"
+      ]
+    },
+    "target": "ES2017"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

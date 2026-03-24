@@ -24,3 +24,6 @@ review-logs/
 
 # TypeScript 构建产物
 *.tsbuildinfo
+
+wrangler.local.toml
+.wrangler

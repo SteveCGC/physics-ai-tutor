@@ -333,7 +333,7 @@ export function createGenerateExamWorkflow(_env: DatabaseEnv) {
     inputSchema: generateExamWorkflowInputSchema,
     outputSchema: generateExamWorkflowOutputSchema,
   })
-    .step(parseRequirementsStep)
+    .then(parseRequirementsStep)
     .then(generateQuestionsStep)
     .then(qualityCheckStep)
     .then(saveDraftStep)
