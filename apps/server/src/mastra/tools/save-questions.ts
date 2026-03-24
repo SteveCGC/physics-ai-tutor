@@ -32,16 +32,14 @@ export const saveQuestionsOutputSchema = z.object({
   questionIds: z.array(z.string().uuid()),
 });
 
-type SaveQuestionsInput = z.infer<typeof saveQuestionsInputSchema>;
-type SaveQuestionsOutput = z.infer<typeof saveQuestionsOutputSchema>;
 
 export function createSaveQuestionsTool(env: DatabaseEnv) {
-  return createTool<SaveQuestionsInput, SaveQuestionsOutput>({
+  return createTool({
     id: "save-questions",
     description: "按输入顺序批量保存题目到数据库，source 固定为 ai。",
     inputSchema: saveQuestionsInputSchema,
     outputSchema: saveQuestionsOutputSchema,
-    execute: async ({ context }: { context: SaveQuestionsInput }) => {
+    execute: async (context) => {
       const db = createDb(env);
       const values = context.questions.map((question, index) => ({
         examId: context.examId,

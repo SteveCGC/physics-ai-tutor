@@ -24,16 +24,14 @@ export const searchQuestionBankOutputSchema = z.object({
   ),
 });
 
-type SearchQuestionBankInput = z.infer<typeof searchQuestionBankInputSchema>;
-type SearchQuestionBankOutput = z.infer<typeof searchQuestionBankOutputSchema>;
 
 export function createSearchQuestionBankTool(env: DatabaseEnv) {
-  return createTool<SearchQuestionBankInput, SearchQuestionBankOutput>({
+  return createTool({
     id: "search-question-bank",
     description: "按知识点关键词在题库中检索已有题目，避免重复出题。",
     inputSchema: searchQuestionBankInputSchema,
     outputSchema: searchQuestionBankOutputSchema,
-    execute: async ({ context }: { context: SearchQuestionBankInput }) => {
+    execute: async (context) => {
       const db = createDb(env);
       const keyword = `%${context.knowledgePoint}%`;
       const filters = [

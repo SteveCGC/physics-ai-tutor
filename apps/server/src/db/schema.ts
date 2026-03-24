@@ -100,9 +100,8 @@ export const exams = pgTable(
         onUpdate: "cascade",
       }),
     classId: uuid("class_id")
-      .notNull()
       .references(() => classes.id, {
-        onDelete: "cascade",
+        onDelete: "set null",
         onUpdate: "cascade",
       }),
     knowledgePoints: jsonb("knowledge_points").$type<string[]>(),

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { knowledgePointGroups, type Question } from "@physics-ai-tutor/shared";
-import { ChevronDown, LoaderCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, ChevronDown, LoaderCircle, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,7 +14,6 @@ import {
   questionTypeLabels,
   questionTypeOptions,
   textareaClassName,
-  type TeacherClass,
 } from "@/components/exams/exam-shared";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -123,8 +123,6 @@ function parseSseEvent(block: string) {
 
 export default function NewExamPage() {
   const router = useRouter();
-  const [classes, setClasses] = useState<TeacherClass[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState("");
   const [selectedKnowledgePoints, setSelectedKnowledgePoints] = useState<string[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<Question["type"][]>(["choice", "fill"]);
   const [difficulty, setDifficulty] = useState(3);
@@ -143,17 +141,6 @@ export default function NewExamPage() {
   const [expandedChapters, setExpandedChapters] = useState<string[]>(
     knowledgePointGroups.map((group) => group.chapter)
   );
-
-  useEffect(() => {
-    void fetchJson<TeacherClass[]>("/api/classes")
-      .then((items) => {
-        setClasses(items);
-        setSelectedClassId(items[0]?.id ?? "");
-      })
-      .catch((fetchError) => {
-        setError(fetchError instanceof Error ? fetchError.message : "班级加载失败");
-      });
-  }, []);
 
   const selectedKnowledgeSet = useMemo(
     () => new Set(selectedKnowledgePoints),
@@ -197,11 +184,6 @@ export default function NewExamPage() {
   }
 
   async function startGeneration() {
-    if (!selectedClassId) {
-      setError("请先选择班级");
-      return;
-    }
-
     if (selectedKnowledgePoints.length === 0) {
       setError("至少选择一个知识点");
       return;
@@ -229,7 +211,7 @@ export default function NewExamPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: buildExamTitle(selectedKnowledgePoints),
-          classId: selectedClassId,
+          classId: null,
           knowledgePoints: selectedKnowledgePoints,
           deadline: null,
         }),
@@ -325,6 +307,14 @@ export default function NewExamPage() {
 
   return (
     <PageContainer>
+      <div className="flex items-center gap-3">
+        <Button variant="secondary" size="sm" asChild>
+          <Link href="/exams">
+            <ArrowLeft className="size-4" />
+            返回
+          </Link>
+        </Button>
+      </div>
       <PageHeader
         title="AI 出题"
         description="按知识点和题型快速生成一套可审查、可编辑的物理试卷。"
@@ -336,22 +326,7 @@ export default function NewExamPage() {
             <CardTitle className="text-2xl">出题配置</CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Field label="班级" required hint="试卷发布对象">
-                <select
-                  className={inputClassName}
-                  value={selectedClassId}
-                  onChange={(event) => setSelectedClassId(event.target.value)}
-                >
-                  {classes.length === 0 ? <option value="">暂无班级</option> : null}
-                  {classes.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.grade} · {item.name}（{item.studentCount} 人）
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
+            <div className="grid gap-6">
               <Field
                 label="题型"
                 required
@@ -512,7 +487,7 @@ export default function NewExamPage() {
               className="w-full"
               size="lg"
               onClick={() => void startGeneration()}
-              disabled={submitting || classes.length === 0}
+              disabled={submitting}
             >
               {submitting ? <LoaderCircle className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
               开始生成

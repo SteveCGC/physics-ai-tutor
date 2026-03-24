@@ -2,7 +2,7 @@
 
 import type { ExamStatus } from "@physics-ai-tutor/shared";
 import Link from "next/link";
-import { Archive, Eye, Send } from "lucide-react";
+import { Archive, Eye, Send, Sparkles, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -34,6 +34,69 @@ const tabs: Array<{ value: ExamStatus; label: string }> = [
   { value: "published", label: "已发布" },
   { value: "archived", label: "已归档" },
 ];
+
+const emptyConfig: Record<ExamStatus, { title: string; desc: string; showCreate: boolean }> = {
+  draft: {
+    title: "还没有草稿试卷",
+    desc: "点击「AI 出题」，让 AI 根据知识点和难度要求自动生成一套完整试卷。",
+    showCreate: true,
+  },
+  published: {
+    title: "还没有已发布的试卷",
+    desc: "在草稿中生成试卷并审核通过后，点击「发布」即可在这里看到。",
+    showCreate: false,
+  },
+  archived: {
+    title: "还没有已归档的试卷",
+    desc: "将不再使用的已发布试卷归档，方便管理历史记录。",
+    showCreate: false,
+  },
+};
+
+function EmptyState({ tab }: { tab: ExamStatus }) {
+  const config = emptyConfig[tab];
+  return (
+    <div className="flex min-h-72 flex-col items-center justify-center gap-6 py-12">
+      {/* Illustration */}
+      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Document shadow */}
+        <rect x="28" y="22" width="68" height="82" rx="8" fill="#E9D5FF" opacity="0.5"/>
+        {/* Document body */}
+        <rect x="24" y="18" width="68" height="82" rx="8" fill="white" stroke="#DDD6FE" strokeWidth="1.5"/>
+        {/* Lines */}
+        <rect x="36" y="34" width="44" height="4" rx="2" fill="#EDE9FE"/>
+        <rect x="36" y="44" width="36" height="4" rx="2" fill="#EDE9FE"/>
+        <rect x="36" y="58" width="44" height="3" rx="1.5" fill="#F3F0FF"/>
+        <rect x="36" y="66" width="30" height="3" rx="1.5" fill="#F3F0FF"/>
+        <rect x="36" y="74" width="38" height="3" rx="1.5" fill="#F3F0FF"/>
+        <rect x="36" y="82" width="22" height="3" rx="1.5" fill="#F3F0FF"/>
+        {/* AI badge */}
+        <circle cx="88" cy="30" r="16" fill="#7C3AED"/>
+        <text x="88" y="35" textAnchor="middle" fontFamily="Arial Black, Arial" fontSize="11" fontWeight="900" fill="white">AI</text>
+        {/* Sparkle top-right */}
+        <path d="M102 12 L103.5 16 L107.5 17.5 L103.5 19 L102 23 L100.5 19 L96.5 17.5 L100.5 16 Z" fill="#A78BFA" opacity="0.7"/>
+        {/* Plus circle bottom */}
+        <circle cx="60" cy="108" r="10" fill="#7C3AED" opacity="0.12"/>
+        <line x1="60" y1="104" x2="60" y2="112" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="56" y1="108" x2="64" y2="108" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+
+      <div className="flex flex-col items-center gap-2 text-center">
+        <p className="text-base font-semibold text-text-strong">{config.title}</p>
+        <p className="max-w-xs text-sm text-text-muted">{config.desc}</p>
+      </div>
+
+      {config.showCreate && (
+        <Button asChild>
+          <Link href="/exams/new">
+            <Plus className="size-4" />
+            AI 出题
+          </Link>
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function ExamsPage() {
   const [activeTab, setActiveTab] = useState<ExamStatus>("draft");
@@ -79,7 +142,10 @@ export default function ExamsPage() {
         description="按状态查看草稿、已发布和已归档试卷。"
         action={
           <Button asChild>
-            <Link href="/exams/new">新建试卷</Link>
+            <Link href="/exams/new">
+              <Sparkles className="size-4" />
+              AI 出题
+            </Link>
           </Button>
         }
       />
@@ -114,13 +180,14 @@ export default function ExamsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex min-h-64 items-center justify-center text-text-muted">
-              正在加载试卷...
+            <div className="flex min-h-64 items-center justify-center">
+              <div className="flex flex-col items-center gap-3 text-text-muted">
+                <div className="size-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+                <span className="text-sm">正在加载试卷...</span>
+              </div>
             </div>
           ) : items.length === 0 ? (
-            <div className="flex min-h-64 items-center justify-center text-text-muted">
-              当前状态下还没有试卷。
-            </div>
+            <EmptyState tab={activeTab} />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">

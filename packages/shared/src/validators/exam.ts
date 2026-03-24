@@ -4,7 +4,7 @@ export const ExamStatusSchema = z.enum(["draft", "published", "archived"]);
 
 export const CreateExamSchema = z.object({
   title: z.string().min(1, "试卷标题不能为空").max(100),
-  classId: z.string().uuid("班级ID格式错误"),
+  classId: z.string().uuid("班级ID格式错误").optional().nullable(),
   knowledgePoints: z.array(z.string().min(1)).min(1, "至少选择一个知识点"),
   deadline: z.string().datetime("截止时间格式错误").optional().nullable(),
 });

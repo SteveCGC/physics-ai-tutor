@@ -155,17 +155,49 @@ function extractAgentText(response: unknown): string {
   throw new Error("Unable to read text content from agent response");
 }
 
+function cleanJsonString(value: string): string {
+  // Strip <think>...</think> reasoning blocks (glm-z1 and other reasoning models)
+  let text = value.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+  // Strip markdown code fences: ```json ... ``` or ``` ... ```
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) return fenced[1].trim();
+
+  // Extract first JSON array
+  const arrayMatch = text.match(/(\[[\s\S]*\])/);
+  if (arrayMatch) return arrayMatch[1].trim();
+
+  // Extract first JSON object
+  const objectMatch = text.match(/(\{[\s\S]*\})/);
+  if (objectMatch) return objectMatch[1].trim();
+
+  return text;
+}
+
+function fixBackslashes(value: string): string {
+  // Fix unescaped backslashes in JSON string values (e.g. LaTeX `\ ` or `\text`)
+  // Valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
+  return value.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
+}
+
 function parseJson<TSchema extends z.ZodTypeAny>(
   value: string,
   schema: TSchema,
   errorMessage: string
 ): z.infer<TSchema> {
+  const cleaned = cleanJsonString(value);
   let parsed: unknown;
 
   try {
-    parsed = JSON.parse(value);
+    parsed = JSON.parse(cleaned);
   } catch {
-    throw new Error(errorMessage);
+    // Retry after fixing unescaped backslashes (common with LaTeX in LLM output)
+    try {
+      parsed = JSON.parse(fixBackslashes(cleaned));
+    } catch {
+      console.error(`[parseJson] Failed to parse. Cleaned value:\n${cleaned.slice(0, 600)}`);
+      throw new Error(errorMessage);
+    }
   }
 
   return schema.parse(parsed);
@@ -199,17 +231,15 @@ async function runGenerateQuestionsStep(
   mastra: WorkflowMastra
 ) {
   const agent = mastra.getAgent<{
-    generate(input: {
-      messages: Array<{ role: "user"; content: string }>;
-    }): Promise<unknown>;
+    generateLegacy(messages: Array<{ role: "user"; content: string }>): Promise<unknown>;
   }>("questionGenerator");
 
-  const response = await agent.generate({
-    messages: [{ role: "user", content: prompt }],
-  });
+  const response = await agent.generateLegacy([{ role: "user", content: prompt }]);
+  const rawText = extractAgentText(response);
+  console.log("[questionGenerator] raw response):", rawText);
 
   const questions = parseJson(
-    extractAgentText(response),
+    rawText,
     z.array(rawQuestionSchema).min(1),
     "questionGenerator 返回的题目 JSON 解析失败"
   );
@@ -222,23 +252,19 @@ async function runQualityCheckStep(
   mastra: WorkflowMastra
 ) {
   const agent = mastra.getAgent<{
-    generate(input: {
-      messages: Array<{ role: "user"; content: string }>;
-    }): Promise<unknown>;
+    generateLegacy(messages: Array<{ role: "user"; content: string }>): Promise<unknown>;
   }>("qualityChecker");
 
-  const response = await agent.generate({
-    messages: [
-      {
-        role: "user",
-        content: `请逐题审查下面的题目 JSON，并返回 JSON 数组：\n${JSON.stringify(
-          questions,
-          null,
-          2
-        )}`,
-      },
-    ],
-  });
+  const response = await agent.generateLegacy([
+    {
+      role: "user",
+      content: `请逐题审查下面的题目 JSON，并返回 JSON 数组：\n${JSON.stringify(
+        questions,
+        null,
+        2
+      )}`,
+    },
+  ]);
 
   const reviewItems = parseJson(
     extractAgentText(response),
@@ -265,11 +291,9 @@ async function runQualityCheckStep(
 
 async function runSaveDraftStep(input: { examId: string; questions: RawQuestion[] }, env: DatabaseEnv) {
   const saveQuestionsTool = createSaveQuestionsTool(env);
-  const result = await saveQuestionsTool.execute({
-    context: {
-      examId: input.examId,
-      questions: input.questions,
-    },
+  const result = await saveQuestionsTool.execute!({
+    examId: input.examId,
+    questions: input.questions,
   });
 
   return saveDraftOutputSchema.parse({

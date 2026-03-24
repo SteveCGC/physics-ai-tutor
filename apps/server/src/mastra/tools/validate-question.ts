@@ -18,8 +18,6 @@ export const validateQuestionOutputSchema = z.object({
   errors: z.array(z.string()),
 });
 
-type ValidateQuestionInput = z.infer<typeof validateQuestionInputSchema>;
-type ValidateQuestionOutput = z.infer<typeof validateQuestionOutputSchema>;
 
 function countStandaloneDollarSigns(text: string) {
   let count = 0;
@@ -40,12 +38,12 @@ function countStandaloneDollarSigns(text: string) {
   return count;
 }
 
-export const validateQuestionTool = createTool<ValidateQuestionInput, ValidateQuestionOutput>({
+export const validateQuestionTool = createTool({
   id: "validate-question",
   description: "按 MVP 规则校验题目格式与基础质量，不调用 AI。",
   inputSchema: validateQuestionInputSchema,
   outputSchema: validateQuestionOutputSchema,
-  execute: async ({ context }: { context: ValidateQuestionInput }) => {
+  execute: async (context) => {
     const errors: string[] = [];
 
     if (!context.content.trim()) {

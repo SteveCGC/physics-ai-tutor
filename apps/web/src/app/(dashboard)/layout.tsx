@@ -2,14 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Home, Plus, Settings, Users } from "lucide-react";
+import { FileText, Home, Settings, Users } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import type { SidebarItem } from "@/components/layout/sidebar";
 import { useAuth } from "@/lib/auth";
 
 const teacherItems: SidebarItem[] = [
   { key: "home", label: "仪表盘", href: "/", icon: <Home /> },
-  { key: "ai-generate", label: "AI 出题", href: "/exams/new", icon: <Plus />, exact: true },
   { key: "papers", label: "试卷管理", href: "/exams", icon: <FileText /> },
   { key: "students", label: "学生管理", href: "/students", icon: <Users /> },
   { key: "settings", label: "设置", href: "/settings", icon: <Settings /> },

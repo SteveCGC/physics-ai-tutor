@@ -28,26 +28,24 @@ export function Sidebar({ items, profile: _profile }: SidebarProps) {
     <aside className="flex h-screen w-64 flex-col border-r border-border bg-bg-card">
       <div className="flex h-20 items-center gap-3 border-b border-border px-6">
         <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-sm">
-          <svg width="44" height="44" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="44" height="44" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="sb-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#9A63FF"/>
-                <stop offset="100%" stopColor="#5E1AB8"/>
-              </linearGradient>
+              <radialGradient id="sb-bg" cx="38%" cy="38%" r="70%">
+                <stop offset="0%" stopColor="#A855F7"/>
+                <stop offset="100%" stopColor="#5B21B6"/>
+              </radialGradient>
             </defs>
-            <rect width="512" height="512" rx="112" fill="url(#sb-bg)"/>
-            <g stroke="#ffffff" strokeWidth="16" fill="none" strokeLinecap="round" opacity="0.85">
-              <ellipse cx="256" cy="256" rx="80" ry="180" transform="rotate(45 256 256)"/>
-              <ellipse cx="256" cy="256" rx="80" ry="180" transform="rotate(-45 256 256)"/>
-              <ellipse cx="256" cy="256" rx="80" ry="180" transform="rotate(90 256 256)"/>
+            <rect width="512" height="512" rx="108" fill="url(#sb-bg)"/>
+            <g fill="none" stroke="white" strokeWidth="18" opacity="0.80">
+              <ellipse cx="256" cy="256" rx="215" ry="76"/>
+              <ellipse cx="256" cy="256" rx="215" ry="76" transform="rotate(60 256 256)"/>
+              <ellipse cx="256" cy="256" rx="215" ry="76" transform="rotate(-60 256 256)"/>
             </g>
-            <text x="256" y="282" fontFamily="Arial, sans-serif" fontSize="76" fontWeight="bold" fill="#ffffff" textAnchor="middle" letterSpacing="2">AI</text>
-            <g transform="translate(216, 80) scale(0.6)">
-              <path d="M 64,32 L 128,64 L 64,96 L 0,64 Z" fill="#ffffff"/>
-              <path d="M 24,76 L 24,112 C 24,124 64,136 64,136 C 64,136 104,124 104,112 L 104,76" fill="none" stroke="#ffffff" strokeWidth="12"/>
-              <line x1="120" y1="60" x2="120" y2="100" stroke="#ffffff" strokeWidth="8" strokeLinecap="round"/>
-              <circle cx="120" cy="106" r="6" fill="#ffffff"/>
-            </g>
+            <circle cx="256" cy="256" r="72" fill="#4C1D95" opacity="0.72"/>
+            <text x="256" y="282" textAnchor="middle" fontFamily="Arial Black, Arial, sans-serif" fontSize="88" fontWeight="900" fill="white" letterSpacing="-2">AI</text>
+            <polygon points="256,114 192,150 256,178 320,150" fill="white" opacity="0.93"/>
+            <line x1="320" y1="150" x2="334" y2="184" stroke="white" strokeWidth="12" strokeLinecap="round" opacity="0.90"/>
+            <circle cx="334" cy="196" r="13" fill="white" opacity="0.90"/>
           </svg>
         </div>
         <div>

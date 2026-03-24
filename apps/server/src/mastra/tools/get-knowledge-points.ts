@@ -17,18 +17,13 @@ export const getKnowledgePointsOutputSchema = z.object({
   ),
 });
 
-type GetKnowledgePointsInput = z.infer<typeof getKnowledgePointsInputSchema>;
-type GetKnowledgePointsOutput = z.infer<typeof getKnowledgePointsOutputSchema>;
 
-export const getKnowledgePointsTool = createTool<
-  GetKnowledgePointsInput,
-  GetKnowledgePointsOutput
->({
+export const getKnowledgePointsTool = createTool({
   id: "get-knowledge-points",
   description: "读取系统知识点体系，可按章节名称或分类筛选。",
   inputSchema: getKnowledgePointsInputSchema,
   outputSchema: getKnowledgePointsOutputSchema,
-  execute: async ({ context }: { context: GetKnowledgePointsInput }) => {
+  execute: async (context) => {
     const category = context.category?.trim();
     const knowledgePoints = category
       ? knowledgePointsTree.filter(

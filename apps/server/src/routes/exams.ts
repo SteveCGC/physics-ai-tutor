@@ -157,9 +157,11 @@ examsRoute.post("/", requireRole("teacher"), async (c) => {
     return jsonError(getFirstZodError(result.error), 400, "BAD_REQUEST");
   }
 
-  const ownedClass = await getOwnedClass(c, result.data.classId);
-  if (!ownedClass) {
-    return jsonError("班级不存在或无权限操作", 403, "FORBIDDEN");
+  if (result.data.classId) {
+    const ownedClass = await getOwnedClass(c, result.data.classId);
+    if (!ownedClass) {
+      return jsonError("班级不存在或无权限操作", 403, "FORBIDDEN");
+    }
   }
 
   const db = c.get("db");
@@ -168,7 +170,7 @@ examsRoute.post("/", requireRole("teacher"), async (c) => {
     .insert(exams)
     .values({
       title: result.data.title,
-      classId: result.data.classId,
+      classId: result.data.classId ?? null,
       knowledgePoints: result.data.knowledgePoints,
       deadline: result.data.deadline ? new Date(result.data.deadline) : null,
       teacherId: profile.id,
