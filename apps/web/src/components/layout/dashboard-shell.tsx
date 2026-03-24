@@ -30,9 +30,9 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-bg-page">
+    <div className="flex h-screen overflow-hidden bg-bg-page">
       <Sidebar items={items} profile={profile} />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar
           user={
             <DropdownMenu>
@@ -67,7 +67,7 @@ export function DashboardShell({
             </DropdownMenu>
           }
         />
-        <div className="min-h-0 flex-1">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

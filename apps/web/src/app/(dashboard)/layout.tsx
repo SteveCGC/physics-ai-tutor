@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 
 const teacherItems: SidebarItem[] = [
   { key: "home", label: "仪表盘", href: "/", icon: <Home /> },
-  { key: "ai-generate", label: "AI 出题", href: "/exams/new", icon: <Plus /> },
+  { key: "ai-generate", label: "AI 出题", href: "/exams/new", icon: <Plus />, exact: true },
   { key: "papers", label: "试卷管理", href: "/exams", icon: <FileText /> },
   { key: "students", label: "学生管理", href: "/students", icon: <Users /> },
   { key: "settings", label: "设置", href: "/settings", icon: <Settings /> },

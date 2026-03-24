@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GraduationCap, ShieldCheck } from "lucide-react";
+import { GraduationCap, Mail, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AuthSplitShell } from "@/components/auth/auth-split-shell";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { getMyProfile, signIn, signUp } from "@/lib/auth";
+import { getMyProfile, signUp } from "@/lib/auth";
 import type { UserRole } from "@/lib/auth-session";
 
 const roleOptions = [
@@ -37,6 +37,7 @@ export default function RegisterPage() {
   const [school, setSchool] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState("");
 
   const passwordError = useMemo(() => {
     if (!password) {
@@ -72,19 +73,49 @@ export default function RegisterPage() {
         school: school || undefined,
       });
 
-      if (!result.session) {
-        await signIn(email, password);
+      if (result.session) {
+        // 邮件确认已关闭，直接登录
+        const profile = await getMyProfile();
+        toast.success("注册成功", "已为你创建账户并自动登录");
+        router.push(profile?.role === "student" ? "/student" : "/");
+      } else {
+        // 需要邮件确认
+        setVerifyEmail(email);
       }
-
-      const profile = await getMyProfile();
-      toast.success("注册成功", "已为你创建账户并自动登录");
-      router.push(profile?.role === "student" ? "/student" : "/");
     } catch (error) {
       toast.error("注册失败", error instanceof Error ? error.message : "请稍后再试");
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (verifyEmail) {
+    return (
+      <AuthSplitShell title="验证邮箱" subtitle="账号已创建，请完成邮箱验证后登录。">
+        <div className="space-y-6">
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-bg-elevated p-8 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <Mail className="size-7" />
+            </span>
+            <div className="space-y-1.5">
+              <p className="font-semibold text-text-strong">确认邮件已发送</p>
+              <p className="text-sm text-text-muted">
+                我们向 <span className="font-medium text-text-strong">{verifyEmail}</span> 发送了一封确认邮件，
+                请点击邮件中的链接完成验证。
+              </p>
+            </div>
+            <p className="text-xs text-text-muted">没收到？请检查垃圾邮件文件夹</p>
+          </div>
+          <p className="text-center text-sm text-text-muted">
+            已验证？
+            <Link href="/login" className="ml-2 font-medium text-primary transition-colors hover:text-primary-hover">
+              立即登录
+            </Link>
+          </p>
+        </div>
+      </AuthSplitShell>
+    );
+  }
 
   return (
     <AuthSplitShell title="创建账号" subtitle="选择你的身份后，开始进入物理教学工作台。">

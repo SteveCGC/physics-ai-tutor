@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9A63FF" />
+      <stop offset="100%" stop-color="#5E1AB8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base container -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGradient)" />
+
+  <!-- Atom orbitals: 3 ellipses at 45°, -45°, 90° -->
+  <g stroke="#ffffff" stroke-width="16" fill="none" stroke-linecap="round" opacity="0.85">
+    <ellipse cx="256" cy="256" rx="80" ry="180" transform="rotate(45 256 256)" />
+    <ellipse cx="256" cy="256" rx="80" ry="180" transform="rotate(-45 256 256)" />
+    <ellipse cx="256" cy="256" rx="80" ry="180" transform="rotate(90 256 256)" />
+  </g>
+
+  <!-- "AI" text -->
+  <text x="256" y="282" font-family="Arial, sans-serif" font-size="76" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="2">AI</text>
+
+  <!-- Graduation cap: diamond board + body + tassel -->
+  <g transform="translate(216, 80) scale(0.6)">
+    <!-- Diamond board -->
+    <path d="M 64,32 L 128,64 L 64,96 L 0,64 Z" fill="#ffffff"/>
+    <!-- Cap body (curved sides going down) -->
+    <path d="M 24,76 L 24,112 C 24,124 64,136 64,136 C 64,136 104,124 104,112 L 104,76" fill="none" stroke="#ffffff" stroke-width="12"/>
+    <!-- Tassel: vertical line + ball -->
+    <line x1="120" y1="60" x2="120" y2="100" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="120" cy="106" r="6" fill="#ffffff"/>
+  </g>
+</svg>

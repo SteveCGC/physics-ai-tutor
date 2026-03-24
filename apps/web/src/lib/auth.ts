@@ -78,7 +78,16 @@ export async function signUp(
   password: string,
   metadata: { role: UserRole; name: string; school?: string }
 ) {
-  const payload = await authRequest("/auth/v1/signup", {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/auth/callback`
+      : "";
+
+  const signupPath = redirectTo
+    ? `/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`
+    : "/auth/v1/signup";
+
+  const payload = await authRequest(signupPath, {
     method: "POST",
     body: JSON.stringify({
       email,

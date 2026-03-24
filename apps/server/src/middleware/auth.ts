@@ -39,12 +39,30 @@ export const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
   }
 
   const db = c.get("db");
-  const profile = await db.query.profiles.findFirst({
+  let profile = await db.query.profiles.findFirst({
     where: eq(profiles.id, user.id),
   });
 
   if (!profile) {
-    return jsonError("Profile not found", 403, "PROFILE_NOT_FOUND");
+    const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const role = meta.role === "student" ? "student" : "teacher";
+    const name = typeof meta.name === "string" && meta.name.trim()
+      ? meta.name.trim()
+      : (user.email?.split("@")[0] ?? "用户");
+    const school = typeof meta.school === "string" && meta.school.trim()
+      ? meta.school.trim()
+      : undefined;
+
+    const [created] = await db
+      .insert(profiles)
+      .values({ id: user.id, role, name, school, status: "active" })
+      .returning();
+
+    if (!created) {
+      return jsonError("Failed to create profile", 500, "PROFILE_CREATE_FAILED");
+    }
+
+    profile = created;
   }
 
   if (profile.status === "disabled") {

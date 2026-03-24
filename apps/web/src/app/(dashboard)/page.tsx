@@ -142,7 +142,6 @@ export default function Home() {
           style={{ background: "var(--gradient-primary)" }}
         >
           <div className="space-y-3">
-            <p className="text-sm uppercase tracking-[0.24em] text-white/75">Teacher Hub</p>
             <h2 className="text-3xl font-bold lg:text-4xl">欢迎回来，{teacherName} 老师！</h2>
             <p className="text-sm text-white/85">
               今日待批改 {stats?.pendingGradeCount ?? 0} 份 | 本周生成{" "}

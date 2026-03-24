@@ -8,7 +8,7 @@ import {
 } from "./src/lib/auth-session";
 
 const AUTH_ROUTES = new Set(["/login", "/register"]);
-const PUBLIC_PREFIXES = ["/_next", "/favicon.ico", "/api"];
+const PUBLIC_PREFIXES = ["/_next", "/favicon.ico", "/api", "/auth/callback"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

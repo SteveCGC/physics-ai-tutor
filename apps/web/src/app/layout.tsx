@@ -5,6 +5,10 @@ import { Toaster } from "@/components/ui/sonner";
 export const metadata: Metadata = {
   title: "高中物理AI教学助手",
   description: "面向高中物理教师和学生的智能教学助手平台",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/Gemini_Icon2.png",
+  },
 };
 
 export default function RootLayout({
