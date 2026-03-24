@@ -5,6 +5,7 @@ import {
   clearPersistedSession,
   getRoleFromSession,
   getStoredSession,
+  isSessionExpired,
   persistSession,
   type AuthSession,
   type UserProfile,
@@ -178,6 +179,14 @@ export function useAuth() {
       const session = getSession();
 
       if (!active) {
+        return;
+      }
+
+      if (isSessionExpired(session)) {
+        clearPersistedSession(SUPABASE_URL);
+        setUser(null);
+        setProfile(null);
+        setIsLoading(false);
         return;
       }
 

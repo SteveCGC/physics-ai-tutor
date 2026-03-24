@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { FileText, Home, Plus, Settings, Users } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import type { SidebarItem } from "@/components/layout/sidebar";
@@ -18,6 +20,18 @@ export default function TeacherDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { profile } = useAuth();
+  const router = useRouter();
+  const { user, isLoading, profile } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [isLoading, user, router]);
+
+  if (isLoading || !user) {
+    return null;
+  }
+
   return <DashboardShell items={teacherItems} profile={profile}>{children}</DashboardShell>;
 }
