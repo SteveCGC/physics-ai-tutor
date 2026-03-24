@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import type { DatabaseEnv } from "../../db/client";
 import { createQualityCheckerAgent, createQuestionGeneratorAgent } from "../agents";
-import { createSaveQuestionsTool } from "../tools";
+import { saveQuestions } from "../tools";
 
 const questionTypeSchema = z.enum(["choice", "fill", "calculation", "short_answer"]);
 
@@ -290,8 +290,7 @@ async function runQualityCheckStep(
 }
 
 async function runSaveDraftStep(input: { examId: string; questions: RawQuestion[] }, env: DatabaseEnv) {
-  const saveQuestionsTool = createSaveQuestionsTool(env);
-  const result = await saveQuestionsTool.execute!({
+  const result = await saveQuestions(env, {
     examId: input.examId,
     questions: input.questions,
   });

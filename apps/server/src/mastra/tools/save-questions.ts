@@ -33,37 +33,42 @@ export const saveQuestionsOutputSchema = z.object({
 });
 
 
+export async function saveQuestions(
+  env: DatabaseEnv,
+  input: z.infer<typeof saveQuestionsInputSchema>
+): Promise<z.infer<typeof saveQuestionsOutputSchema>> {
+  const db = createDb(env);
+  const values = input.questions.map((question, index) => ({
+    examId: input.examId,
+    type: question.type,
+    content: question.content,
+    options: question.options,
+    answer: question.answer,
+    acceptedAnswers: question.acceptedAnswers,
+    explanation: question.explanation,
+    knowledgePoints: question.knowledgePoints,
+    difficulty: question.difficulty,
+    score: question.score,
+    orderIndex: index + 1,
+    source: "ai" as const,
+    qualityFlags: question.qualityFlags,
+  }));
+
+  const inserted = await db.insert(questions).values(values).returning({
+    id: questions.id,
+  });
+
+  return {
+    questionIds: inserted.map((item) => item.id),
+  };
+}
+
 export function createSaveQuestionsTool(env: DatabaseEnv) {
   return createTool({
     id: "save-questions",
     description: "按输入顺序批量保存题目到数据库，source 固定为 ai。",
     inputSchema: saveQuestionsInputSchema,
     outputSchema: saveQuestionsOutputSchema,
-    execute: async (context) => {
-      const db = createDb(env);
-      const values = context.questions.map((question, index) => ({
-        examId: context.examId,
-        type: question.type,
-        content: question.content,
-        options: question.options,
-        answer: question.answer,
-        acceptedAnswers: question.acceptedAnswers,
-        explanation: question.explanation,
-        knowledgePoints: question.knowledgePoints,
-        difficulty: question.difficulty,
-        score: question.score,
-        orderIndex: index + 1,
-        source: "ai" as const,
-        qualityFlags: question.qualityFlags,
-      }));
-
-      const inserted = await db.insert(questions).values(values).returning({
-        id: questions.id,
-      });
-
-      return {
-        questionIds: inserted.map((item) => item.id),
-      };
-    },
+    execute: async (context) => saveQuestions(env, context),
   });
 }
