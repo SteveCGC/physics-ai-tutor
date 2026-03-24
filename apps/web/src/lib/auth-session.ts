@@ -47,6 +47,13 @@ export function getSupabaseCookieName(url?: string) {
   return projectRef ? `sb-${projectRef}-auth-token` : FALLBACK_COOKIE_NAME;
 }
 
+export function isSessionExpired(session: AuthSession | null): boolean {
+  if (!session?.expires_at) {
+    return false;
+  }
+  return Date.now() / 1000 > session.expires_at;
+}
+
 export function getRoleFromSession(session: AuthSession | null): UserRole | null {
   const rawRole =
     session?.user.user_metadata?.role ?? session?.user.app_metadata?.role;

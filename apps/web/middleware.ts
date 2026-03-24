@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   getRoleFromSession,
   getSupabaseCookieName,
+  isSessionExpired,
   readSessionFromCookieString,
 } from "./src/lib/auth-session";
 
@@ -23,7 +24,7 @@ export function middleware(request: NextRequest) {
   );
   const role = getRoleFromSession(session);
 
-  if (!session?.access_token) {
+  if (!session?.access_token || isSessionExpired(session)) {
     if (AUTH_ROUTES.has(pathname)) {
       return NextResponse.next();
     }
