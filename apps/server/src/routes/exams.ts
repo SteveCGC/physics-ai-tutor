@@ -25,6 +25,72 @@ function getFirstZodError(error: z.ZodError) {
   return error.issues[0]?.message ?? "请求参数错误";
 }
 
+function buildGenerationStepPayload(
+  step: "parse-requirements" | "generate-questions" | "quality-check" | "save-draft"
+) {
+  switch (step) {
+    case "parse-requirements":
+      return {
+        key: "prepare",
+        message: "已确认出题要求",
+        progress: 15,
+      };
+    case "generate-questions":
+      return {
+        key: "prepare",
+        message: "题目生成完成",
+        progress: 65,
+      };
+    case "quality-check":
+      return {
+        key: "quality_check",
+        message: "质量检查完成",
+        progress: 90,
+      };
+    case "save-draft":
+      return {
+        key: "save_draft",
+        message: "试卷草稿已保存",
+        progress: 95,
+      };
+  }
+}
+
+function buildPreviewQuestion(
+  examId: string,
+  question: {
+    type: "choice" | "fill" | "calculation" | "short_answer";
+    content: string;
+    options?: string[];
+    answer: string;
+    acceptedAnswers?: string[];
+    explanation?: string;
+    knowledgePoints: string[];
+    difficulty: number;
+    score: number;
+    qualityFlags?: Array<{ type: string; message: string; severity: "warning" | "error" }>;
+  },
+  index: number
+) {
+  return {
+    id: `preview-${index + 1}`,
+    examId,
+    type: question.type,
+    content: question.content,
+    options: question.options ?? null,
+    answer: question.answer,
+    acceptedAnswers: question.acceptedAnswers ?? null,
+    explanation: question.explanation ?? null,
+    knowledgePoints: question.knowledgePoints ?? null,
+    difficulty: question.difficulty,
+    score: question.score,
+    orderIndex: index + 1,
+    source: "ai" as const,
+    qualityFlags: question.qualityFlags ?? null,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 const GenerateExamBodySchema = z.object({
   knowledgePoints: z.array(z.string().trim().min(1)).min(1, "至少提供一个知识点"),
   questionTypes: z
@@ -413,11 +479,20 @@ examsRoute.post("/:id/generate", requireRole("teacher"), async (c) => {
             input: workflowInput,
             onEvent(event) {
               if (event.event === "step") {
-                send("step", event);
+                send("step", {
+                  ...event,
+                  ...buildGenerationStepPayload(event.step),
+                });
                 return;
               }
 
-              send("questions", event);
+              event.data.forEach((question, index) => {
+                send("questions", {
+                  question: buildPreviewQuestion(exam.id, question, index),
+                  progress: 20 + Math.round(((index + 1) / event.data.length) * 50),
+                  message: `第 ${index + 1} 题已生成`,
+                });
+              });
             },
           });
 

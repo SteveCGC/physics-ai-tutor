@@ -36,6 +36,39 @@ type GenerateQuestionEvent = {
   message: string;
 };
 
+type LegacyStepEvent = {
+  event: "step";
+  step: "parse-requirements" | "generate-questions" | "quality-check" | "save-draft";
+  status: "done";
+};
+
+type StepEventPayload = {
+  key?: string;
+  message?: string;
+  progress?: number;
+  step?: LegacyStepEvent["step"];
+};
+
+type RawGeneratedQuestion = Pick<
+  Question,
+  | "type"
+  | "content"
+  | "answer"
+  | "difficulty"
+  | "score"
+> & {
+  options?: string[] | null;
+  acceptedAnswers?: string[] | null;
+  explanation?: string | null;
+  knowledgePoints?: string[] | null;
+  qualityFlags?: Question["qualityFlags"];
+};
+
+type LegacyQuestionsEvent = {
+  event: "questions";
+  data: RawGeneratedQuestion[];
+};
+
 type CreateExamResponse = {
   id: string;
 };
@@ -118,6 +151,69 @@ function parseSseEvent(block: string) {
   return {
     event,
     data: JSON.parse(data) as unknown,
+  };
+}
+
+function mapLegacyStepPayload(payload: StepEventPayload) {
+  if (payload.key && payload.message && typeof payload.progress === "number") {
+    return {
+      key: payload.key,
+      message: payload.message,
+      progress: payload.progress,
+    };
+  }
+
+  switch (payload.step) {
+    case "parse-requirements":
+      return {
+        key: "prepare",
+        message: "已确认出题要求",
+        progress: 15,
+      };
+    case "generate-questions":
+      return {
+        key: "prepare",
+        message: "题目生成完成",
+        progress: 65,
+      };
+    case "quality-check":
+      return {
+        key: "quality_check",
+        message: "质量检查完成",
+        progress: 90,
+      };
+    case "save-draft":
+      return {
+        key: "save_draft",
+        message: "试卷草稿已保存",
+        progress: 95,
+      };
+    default:
+      return null;
+  }
+}
+
+function toPreviewQuestion(
+  examId: string,
+  question: RawGeneratedQuestion,
+  index: number
+): Question {
+  return {
+    id: `preview-${index + 1}`,
+    examId,
+    type: question.type,
+    content: question.content,
+    options: question.options ?? null,
+    answer: question.answer,
+    acceptedAnswers: question.acceptedAnswers ?? null,
+    explanation: question.explanation ?? null,
+    knowledgePoints: question.knowledgePoints ?? null,
+    difficulty: question.difficulty,
+    score: question.score,
+    orderIndex: index + 1,
+    source: "ai",
+    qualityFlags: question.qualityFlags ?? null,
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -260,28 +356,39 @@ export default function NewExamPage() {
           }
 
           if (parsed.event === "step") {
-            const payload = parsed.data as {
-              key: string;
-              message: string;
-              progress: number;
-            };
+            const mapped = mapLegacyStepPayload(parsed.data as StepEventPayload);
+            if (!mapped) {
+              continue;
+            }
 
-            setProgress(payload.progress);
-            setStatusText(payload.key === "quality_check" ? "✅ 质量检查完成" : "⏳ 正在生成题目...");
+            setProgress(mapped.progress);
+            setStatusText(mapped.key === "quality_check" ? "✅ 质量检查完成" : "⏳ 正在生成题目...");
             setSteps((current) =>
               current.map((item) =>
-                item.key === payload.key
-                  ? { ...item, status: "completed", message: payload.message }
+                item.key === mapped.key
+                  ? { ...item, status: "completed", message: mapped.message }
                   : item
               )
             );
           }
 
           if (parsed.event === "questions") {
-            const payload = parsed.data as GenerateQuestionEvent;
-            setGeneratedQuestions((current) => [...current, payload.question]);
-            setProgress(payload.progress);
-            setStatusText(`⏳ 正在生成题目... 已完成 ${payload.question.orderIndex} / ${totalQuestions}`);
+            const payload = parsed.data as GenerateQuestionEvent | LegacyQuestionsEvent;
+
+            if ("question" in payload) {
+              setGeneratedQuestions((current) => [...current, payload.question]);
+              setProgress(payload.progress);
+              setStatusText(`⏳ 正在生成题目... 已完成 ${payload.question.orderIndex} / ${totalQuestions}`);
+              continue;
+            }
+
+            setGeneratedQuestions(
+              payload.data.map((question, index) =>
+                toPreviewQuestion(exam.id, question, index)
+              )
+            );
+            setProgress(70);
+            setStatusText(`⏳ 正在生成题目... 已完成 ${payload.data.length} / ${totalQuestions}`);
           }
 
           if (parsed.event === "done") {
