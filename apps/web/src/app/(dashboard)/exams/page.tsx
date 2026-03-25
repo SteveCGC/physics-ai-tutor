@@ -2,7 +2,7 @@
 
 import type { ExamStatus } from "@physics-ai-tutor/shared";
 import Link from "next/link";
-import { Archive, Eye, Send, Sparkles, Plus } from "lucide-react";
+import { Archive, Eye, Send, Sparkles, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -135,8 +135,23 @@ export default function ExamsPage() {
     }
   }
 
+  async function deleteExam(examId: string) {
+    if (!window.confirm("确认删除这份草稿试卷？")) {
+      return;
+    }
+
+    try {
+      await fetchJson(`/api/exams/${examId}`, {
+        method: "DELETE",
+      });
+      await loadExams(activeTab);
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : "删除试卷失败");
+    }
+  }
+
   return (
-    <PageContainer>
+    <PageContainer className="flex h-[calc(100vh-73px)] flex-col overflow-hidden">
       <PageHeader
         title="试卷列表"
         description="按状态查看草稿、已发布和已归档试卷。"
@@ -174,11 +189,11 @@ export default function ExamsPage() {
         </div>
       ) : null}
 
-      <Card>
+      <Card className="flex min-h-0 flex-1 flex-col">
         <CardHeader>
           <CardTitle>{tabs.find((tab) => tab.value === activeTab)?.label}试卷</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex min-h-0 flex-1 flex-col">
           {loading ? (
             <div className="flex min-h-64 items-center justify-center">
               <div className="flex flex-col items-center gap-3 text-text-muted">
@@ -189,9 +204,9 @@ export default function ExamsPage() {
           ) : items.length === 0 ? (
             <EmptyState tab={activeTab} />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="min-h-0 flex-1 overflow-auto">
               <table className="min-w-full text-left text-sm">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-bg-card">
                   <tr className="border-b border-border text-text-muted">
                     <th className="py-3 pr-4 font-medium">标题</th>
                     <th className="px-4 py-3 font-medium">知识点</th>
@@ -235,13 +250,23 @@ export default function ExamsPage() {
                               </Link>
                             </Button>
                             {exam.status === "draft" ? (
-                              <Button
-                                size="sm"
-                                onClick={() => void changeStatus(exam.id, "published")}
-                              >
-                                <Send className="size-4" />
-                                发布
-                              </Button>
+                              <>
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={() => void deleteExam(exam.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                  删除
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => void changeStatus(exam.id, "published")}
+                                >
+                                  <Send className="size-4" />
+                                  发布
+                                </Button>
+                              </>
                             ) : null}
                             {exam.status === "published" ? (
                               <Button

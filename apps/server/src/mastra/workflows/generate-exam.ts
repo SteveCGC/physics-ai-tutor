@@ -1,3 +1,4 @@
+import { Agent } from "@mastra/core/agent";
 import { Mastra } from "@mastra/core";
 import { createStep, createWorkflow } from "@mastra/core/workflows";
 import type { QualityFlag, QuestionType } from "@physics-ai-tutor/shared";
@@ -5,6 +6,7 @@ import { z } from "zod";
 
 import type { DatabaseEnv } from "../../db/client";
 import { createQualityCheckerAgent, createQuestionGeneratorAgent } from "../agents";
+import { createQualityCheckerModel } from "../models";
 import { saveQuestions } from "../tools";
 
 const questionTypeSchema = z.enum(["choice", "fill", "calculation", "short_answer"]);
@@ -194,6 +196,53 @@ function fixBackslashes(value: string): string {
   return value.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
 }
 
+function escapeControlCharsInJsonStrings(value: string) {
+  let result = "";
+  let inString = false;
+  let escaped = false;
+
+  for (const char of value) {
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      result += char;
+      escaped = true;
+      continue;
+    }
+
+    if (char === "\"") {
+      result += char;
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) {
+      if (char === "\n") {
+        result += "\\n";
+        continue;
+      }
+
+      if (char === "\r") {
+        result += "\\r";
+        continue;
+      }
+
+      if (char === "\t") {
+        result += "\\t";
+        continue;
+      }
+    }
+
+    result += char;
+  }
+
+  return result;
+}
+
 function truncateForLog(value: string, length = 1200) {
   return value.length > length ? `${value.slice(0, length)}\n...[truncated]` : value;
 }
@@ -206,13 +255,13 @@ function parseJson<TSchema extends z.ZodTypeAny>(
 ): z.infer<TSchema> {
   const cleaned = cleanJsonString(value);
   let parsed: unknown;
-  let normalized = cleaned;
+  let normalized = escapeControlCharsInJsonStrings(cleaned);
 
   try {
     parsed = JSON.parse(normalized);
   } catch (initialError) {
     // Retry after fixing unescaped backslashes (common with LaTeX in LLM output)
-    normalized = fixBackslashes(cleaned);
+    normalized = fixBackslashes(normalized);
 
     try {
       parsed = JSON.parse(normalized);
@@ -263,6 +312,15 @@ function reviewIssuesToFlags(review: ReviewItem): QualityFlag[] | undefined {
 
 function toUniqueTrimmedStrings(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function normalizeChoiceOption(option: string, optionIndex: number) {
+  const optionLetter = String.fromCharCode(65 + optionIndex);
+
+  return option
+    .trim()
+    .replace(new RegExp(`^${optionLetter}\\s*[.．、:：)）-]\\s*`, "i"), "")
+    .trim();
 }
 
 function mergeQualityFlags(
@@ -352,9 +410,13 @@ function normalizeModelQuestion(question: ModelQuestion): RawQuestion {
     ...(question.acceptedAnswers ?? []),
     ...answerCandidates.slice(1),
   ]);
+  const normalizedOptions = question.options?.map((option, optionIndex) =>
+    normalizeChoiceOption(option, optionIndex)
+  );
 
   return rawQuestionSchema.parse({
     ...question,
+    options: normalizedOptions,
     answer: answerCandidates[0],
     acceptedAnswers: acceptedAnswers.length > 0 ? acceptedAnswers : undefined,
   });
@@ -381,12 +443,48 @@ async function runGenerateQuestionsStep(
   const rawText = extractAgentText(response);
   console.log("[questionGenerator] raw response:", truncateForLog(rawText));
 
-  const generatedQuestions = parseJson(
-    rawText,
-    z.array(modelQuestionSchema).min(1),
-    "questionGenerator 返回的题目 JSON 解析失败",
-    "questionGenerator"
-  );
+  let generatedQuestions: ModelQuestion[];
+
+  try {
+    generatedQuestions = parseJson(
+      rawText,
+      z.array(modelQuestionSchema).min(1),
+      "questionGenerator 返回的题目 JSON 解析失败",
+      "questionGenerator"
+    );
+  } catch (error) {
+    console.warn("[questionGenerator] falling back to json repair");
+
+    const repairAgent = mastra.getAgent<{
+      generateLegacy(messages: Array<{ role: "user"; content: string }>): Promise<unknown>;
+    }>("jsonRepair");
+
+    const repairResponse = await repairAgent.generateLegacy([
+      {
+        role: "user",
+        content: [
+          "请将下面这段内容修复为合法 JSON 数组，只返回修复后的 JSON。",
+          "要求：",
+          "1. 保留原有题目信息，不要补充解释性文字。",
+          "2. 如果字符串中有真实换行、制表符或非法反斜杠，请改成合法 JSON 转义。",
+          "3. 如果选择题 options 自带 A./B./C./D. 前缀可以保留，后续系统会清洗。",
+          "4. 如果某题字段明显缺失，不要编造新信息，只尽量保持原样并输出合法 JSON。",
+          "待修复内容：",
+          cleanJsonString(rawText),
+        ].join("\n"),
+      },
+    ]);
+
+    const repairedText = extractAgentText(repairResponse);
+    console.log("[jsonRepair] repaired response:", truncateForLog(repairedText));
+
+    generatedQuestions = parseJson(
+      repairedText,
+      z.array(modelQuestionSchema).min(1),
+      error instanceof Error ? error.message : "questionGenerator 返回的题目 JSON 解析失败",
+      "jsonRepair"
+    );
+  }
 
   const questions = generatedQuestions.map((question) => {
     const normalizedQuestion = normalizeModelQuestion(question);
@@ -533,6 +631,19 @@ export async function runGenerateExamWorkflow(options: {
     agents: {
       questionGenerator: createQuestionGeneratorAgent(options.env),
       qualityChecker: createQualityCheckerAgent(options.env),
+      jsonRepair: new Agent({
+        name: "jsonRepair",
+        description: "将接近 JSON 的模型输出修复为合法 JSON。",
+        model: createQualityCheckerModel(options.env),
+        instructions: `
+你是 JSON 修复器。
+
+你的唯一任务是把用户提供的内容修复为合法 JSON。
+不要总结，不要解释，不要补充说明，不要输出 markdown 代码块。
+如果原文是 JSON 数组，就只输出修复后的 JSON 数组。
+如果字符串中存在真实换行、制表符、非法反斜杠或不合法引号，请修复为合法 JSON 转义。
+        `.trim(),
+      }),
     },
   });
 

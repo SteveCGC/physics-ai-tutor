@@ -38,6 +38,8 @@ ${knowledgePointPrompt}
 13. 填空题和计算题必须给出足够的已知量，保证学生可以直接作答，不能只写问题不给数值或条件
 14. 解析要简短但完整，说明核心公式、代入关系或判断依据
 15. knowledgePoints 必须使用传入的知识点名称本身，不要擅自扩写成“质点运动学-位移与速度关系”这类系统外标签
+16. JSON 中每个字符串值必须写成单行，不要在 explanation、content、options 等字段里输出真实换行符
+17. 所有反斜杠都必须是合法 JSON 转义；若写 LaTeX，请确保反斜杠已正确转义
 
 输出为严格的 JSON 数组，格式:
 [{ "type": "choice", "content": "题干", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "A", "explanation": "解析", "knowledgePoints": ["知识点"], "difficulty": 3, "score": 5 }]
@@ -52,6 +54,8 @@ ${knowledgePointPrompt}
 - 答案是否能由题干直接求出
 - 解析是否与答案一致
 - knowledgePoints 是否只包含给定知识点
+- explanation / content / options 中是否没有真实换行
+- 反斜杠和公式是否仍是合法 JSON
 
 不要输出 JSON 以外的任何内容。
     `.trim(),
