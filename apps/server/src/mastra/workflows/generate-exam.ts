@@ -28,6 +28,19 @@ export const rawQuestionSchema = z.object({
   qualityFlags: z.array(qualityFlagSchema).optional(),
 });
 
+const modelQuestionSchema = z.object({
+  type: questionTypeSchema,
+  content: z.string().trim().min(1),
+  options: z.array(z.string()).optional(),
+  answer: z.union([z.string().trim().min(1), z.array(z.string().trim().min(1)).min(1)]),
+  acceptedAnswers: z.array(z.string().trim().min(1)).optional(),
+  explanation: z.string().optional(),
+  knowledgePoints: z.array(z.string().trim().min(1)).min(1),
+  difficulty: z.number().int().min(1).max(5),
+  score: z.number().int().positive(),
+  qualityFlags: z.array(qualityFlagSchema).optional(),
+});
+
 const reviewItemSchema = z.object({
   questionIndex: z.number().int().min(0),
   passed: z.boolean(),
@@ -65,6 +78,7 @@ const qualityCheckOutputSchema = z.object({
 const saveDraftOutputSchema = generateExamWorkflowOutputSchema;
 
 export type RawQuestion = z.infer<typeof rawQuestionSchema>;
+type ModelQuestion = z.infer<typeof modelQuestionSchema>;
 export type GenerateExamWorkflowInput = z.infer<typeof generateExamWorkflowInputSchema>;
 export type GenerateExamWorkflowOutput = z.infer<typeof generateExamWorkflowOutputSchema>;
 
@@ -180,27 +194,57 @@ function fixBackslashes(value: string): string {
   return value.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
 }
 
+function truncateForLog(value: string, length = 1200) {
+  return value.length > length ? `${value.slice(0, length)}\n...[truncated]` : value;
+}
+
 function parseJson<TSchema extends z.ZodTypeAny>(
   value: string,
   schema: TSchema,
-  errorMessage: string
+  errorMessage: string,
+  contextLabel = "parseJson"
 ): z.infer<TSchema> {
   const cleaned = cleanJsonString(value);
   let parsed: unknown;
+  let normalized = cleaned;
 
   try {
-    parsed = JSON.parse(cleaned);
-  } catch {
+    parsed = JSON.parse(normalized);
+  } catch (initialError) {
     // Retry after fixing unescaped backslashes (common with LaTeX in LLM output)
+    normalized = fixBackslashes(cleaned);
+
     try {
-      parsed = JSON.parse(fixBackslashes(cleaned));
-    } catch {
-      console.error(`[parseJson] Failed to parse. Cleaned value:\n${cleaned.slice(0, 600)}`);
+      parsed = JSON.parse(normalized);
+    } catch (retryError) {
+      console.error(`[${contextLabel}] JSON parse failed`, {
+        initialError: initialError instanceof Error ? initialError.message : String(initialError),
+        retryError: retryError instanceof Error ? retryError.message : String(retryError),
+        cleaned: truncateForLog(cleaned),
+        normalized: truncateForLog(normalized),
+      });
+
       throw new Error(errorMessage);
     }
   }
 
-  return schema.parse(parsed);
+  const result = schema.safeParse(parsed);
+
+  if (!result.success) {
+    console.error(`[${contextLabel}] Schema validation failed`, {
+      issues: result.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+        code: issue.code,
+      })),
+      cleaned: truncateForLog(cleaned),
+      normalized: truncateForLog(normalized),
+    });
+
+    throw new Error(`${errorMessage}（返回结构不符合预期）`);
+  }
+
+  return result.data;
 }
 
 function reviewIssuesToFlags(review: ReviewItem): QualityFlag[] | undefined {
@@ -215,6 +259,105 @@ function reviewIssuesToFlags(review: ReviewItem): QualityFlag[] | undefined {
     message: issue,
     severity: review.passed ? "warning" : "error",
   }));
+}
+
+function toUniqueTrimmedStrings(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function mergeQualityFlags(
+  ...groups: Array<Array<{ type: string; message: string; severity: "warning" | "error" }> | undefined>
+) {
+  const merged = groups.flatMap((group) => group ?? []);
+  if (merged.length === 0) {
+    return undefined;
+  }
+
+  const seen = new Set<string>();
+  return merged.filter((flag) => {
+    const key = `${flag.type}:${flag.severity}:${flag.message}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildLocalQualityFlags(question: RawQuestion): QualityFlag[] | undefined {
+  const flags: QualityFlag[] = [];
+  const content = question.content.trim();
+  const explanation = question.explanation?.trim() ?? "";
+
+  if (/如图|见图|下图|图像如图|根据图像/i.test(content)) {
+    flags.push({
+      type: "quality_check",
+      severity: "error",
+      message: "题干依赖外部图示，当前系统无法保证学生仅凭文本作答。",
+    });
+  }
+
+  if (
+    /(?:初速度|末速度|加速度|位移|路程|时间|速度从|速度为|水平位移|竖直位移|落地时水平位移|落地时竖直速度)\s*[，。；,;]/.test(
+      content
+    )
+  ) {
+    flags.push({
+      type: "quality_check",
+      severity: "error",
+      message: "题干缺少关键已知条件，存在留空描述。",
+    });
+  }
+
+  if (/__+|（\s*）|\(\s*\)/.test(content)) {
+    flags.push({
+      type: "quality_check",
+      severity: "warning",
+      message: "题干包含空白占位符，请确认不是遗漏条件或答案。",
+    });
+  }
+
+  if ((question.type === "fill" || question.type === "calculation") && /\d/.test(content) === false) {
+    flags.push({
+      type: "quality_check",
+      severity: "warning",
+      message: "填空题/计算题未出现明确数值条件，请确认题目是否可直接作答。",
+    });
+  }
+
+  if (!explanation) {
+    flags.push({
+      type: "quality_check",
+      severity: "warning",
+      message: "缺少解析，建议补充核心思路或公式依据。",
+    });
+  }
+
+  if (question.knowledgePoints.some((point) => point.includes("-"))) {
+    flags.push({
+      type: "quality_check",
+      severity: "warning",
+      message: "knowledgePoints 使用了扩展标签，建议统一为系统标准知识点名称。",
+    });
+  }
+
+  return flags.length > 0 ? flags : undefined;
+}
+
+function normalizeModelQuestion(question: ModelQuestion): RawQuestion {
+  const answerCandidates = Array.isArray(question.answer)
+    ? toUniqueTrimmedStrings(question.answer)
+    : [question.answer.trim()];
+  const acceptedAnswers = toUniqueTrimmedStrings([
+    ...(question.acceptedAnswers ?? []),
+    ...answerCandidates.slice(1),
+  ]);
+
+  return rawQuestionSchema.parse({
+    ...question,
+    answer: answerCandidates[0],
+    acceptedAnswers: acceptedAnswers.length > 0 ? acceptedAnswers : undefined,
+  });
 }
 
 async function runParseRequirementsStep(input: GenerateExamWorkflowInput) {
@@ -236,13 +379,26 @@ async function runGenerateQuestionsStep(
 
   const response = await agent.generateLegacy([{ role: "user", content: prompt }]);
   const rawText = extractAgentText(response);
-  console.log("[questionGenerator] raw response):", rawText);
+  console.log("[questionGenerator] raw response:", truncateForLog(rawText));
 
-  const questions = parseJson(
+  const generatedQuestions = parseJson(
     rawText,
-    z.array(rawQuestionSchema).min(1),
-    "questionGenerator 返回的题目 JSON 解析失败"
+    z.array(modelQuestionSchema).min(1),
+    "questionGenerator 返回的题目 JSON 解析失败",
+    "questionGenerator"
   );
+
+  const questions = generatedQuestions.map((question) => {
+    const normalizedQuestion = normalizeModelQuestion(question);
+
+    return {
+      ...normalizedQuestion,
+      qualityFlags: mergeQualityFlags(
+        normalizedQuestion.qualityFlags,
+        buildLocalQualityFlags(normalizedQuestion)
+      ),
+    };
+  });
 
   return generateQuestionsOutputSchema.parse({ questions });
 }
@@ -269,7 +425,8 @@ async function runQualityCheckStep(
   const reviewItems = parseJson(
     extractAgentText(response),
     z.array(reviewItemSchema),
-    "qualityChecker 返回的审查 JSON 解析失败"
+    "qualityChecker 返回的审查 JSON 解析失败",
+    "qualityChecker"
   );
 
   const reviewedQuestions = questions.map((question, index) => {
@@ -279,7 +436,7 @@ async function runQualityCheckStep(
     return flags && flags.length > 0
       ? {
           ...question,
-          qualityFlags: [...(question.qualityFlags ?? []), ...flags],
+          qualityFlags: mergeQualityFlags(question.qualityFlags, flags),
         }
       : question;
   });
