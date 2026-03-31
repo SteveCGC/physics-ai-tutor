@@ -3,6 +3,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import type { Question, QuestionType } from "@physics-ai-tutor/shared";
 import {
+  ArrowLeft,
   Check,
   ChevronDown,
   LoaderCircle,
@@ -335,8 +336,23 @@ export default function ExamReviewPage() {
 
   const currentClass = classes.find((item) => item.id === exam?.classId);
 
+  function goBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/exams");
+  }
+
   return (
     <PageContainer className="pb-36">
+      <div className="flex items-center gap-3">
+        <Button variant="secondary" size="sm" onClick={goBack}>
+          <ArrowLeft className="size-4" />
+          返回
+        </Button>
+      </div>
       <PageHeader
         title="试卷审查"
         description="逐题检查 AI 生成结果，必要时编辑、删题、补题后再发布。"

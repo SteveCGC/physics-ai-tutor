@@ -16,9 +16,9 @@ export function createZhipu(env: Pick<Bindings, "ZHIPU_API_KEY">) {
   });
 }
 
-/** 推理增强型，适合出题/解题（计算题、推导题）*/
+/** 稳定文本/结构化输出，适合严格 JSON 出题 */
 export function createQuestionGeneratorModel(env: Pick<Bindings, "ZHIPU_API_KEY">) {
-  return createZhipu(env)("glm-z1-flash");
+  return createZhipu(env)("glm-4-flash");
 }
 
 /** 轻量免费版，适合格式校验类任务 */

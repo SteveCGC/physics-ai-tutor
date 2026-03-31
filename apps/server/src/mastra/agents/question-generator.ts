@@ -27,7 +27,7 @@ ${knowledgePointPrompt}
 2. 物理公式使用 LaTeX 格式（行内公式用 $...$，独立公式用 $$...$$）
 3. 选择题必须有 A B C D 四个选项，且只有一个正确答案
 4. 每道题必须包含: 题干(content)、题型(type)、标准答案(answer)、分值(score)、知识点标签(knowledgePoints)
-5. 建议包含解析(explanation)，无法确定时可不输出
+5. 每道题都必须包含解析(explanation)，解析要简短但完整
 6. 一期题型只有: choice（选择题）、fill（填空题）、calculation（计算题）、short_answer（简答题）
 7. 物理量单位使用 SI 制，保证单位正确
 8. 难度 1-5 对应: 1=基础概念 2=简单应用 3=综合运用 4=拓展提升 5=竞赛难度
@@ -40,6 +40,7 @@ ${knowledgePointPrompt}
 15. knowledgePoints 必须使用传入的知识点名称本身，不要擅自扩写成“质点运动学-位移与速度关系”这类系统外标签
 16. JSON 中每个字符串值必须写成单行，不要在 explanation、content、options 等字段里输出真实换行符
 17. 所有反斜杠都必须是合法 JSON 转义；若写 LaTeX，请确保反斜杠已正确转义
+18. 选择题的 content 只能包含题干本身，不能把 A、B、C、D 选项文字再次写进 content；选项只能放在 options 数组里
 
 输出为严格的 JSON 数组，格式:
 [{ "type": "choice", "content": "题干", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "A", "explanation": "解析", "knowledgePoints": ["知识点"], "difficulty": 3, "score": 5 }]

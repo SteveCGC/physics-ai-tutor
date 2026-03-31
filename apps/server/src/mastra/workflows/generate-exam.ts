@@ -50,6 +50,11 @@ const reviewItemSchema = z.object({
   suggestions: z.array(z.string()),
 });
 
+const explanationPatchSchema = z.object({
+  questionIndex: z.number().int().min(0),
+  explanation: z.string().trim().min(1),
+});
+
 export const generateExamWorkflowInputSchema = z.object({
   examId: z.string().min(1),
   knowledgePoints: z.array(z.string().trim().min(1)).min(1),
@@ -125,7 +130,7 @@ function buildExamPrompt(input: GenerateExamWorkflowInput, distribution: Record<
     `目标难度：${input.difficulty}（1-5）`,
     "题型分布：",
     distributionLines,
-    "每道题必须包含字段：type、content、options（选择题必填）、answer、explanation（可选）、knowledgePoints、difficulty、score。",
+    "每道题必须包含字段：type、content、options（选择题必填）、answer、explanation、knowledgePoints、difficulty、score。",
     "题型只允许：choice、fill、calculation、short_answer。",
     "禁止输出 markdown 代码块，必须直接输出 JSON。",
   ].join("\n");
@@ -171,6 +176,24 @@ function extractAgentText(response: unknown): string {
   throw new Error("Unable to read text content from agent response");
 }
 
+async function extractStructuredObject<T>(response: unknown): Promise<T | undefined> {
+  if (!response || typeof response !== "object") {
+    return undefined;
+  }
+
+  const candidate = response as {
+    object?: unknown;
+  };
+
+  const objectValue = candidate.object;
+  const resolved =
+    objectValue && typeof (objectValue as Promise<unknown>).then === "function"
+      ? await (objectValue as Promise<unknown>)
+      : objectValue;
+
+  return resolved as T | undefined;
+}
+
 function cleanJsonString(value: string): string {
   // Strip <think>...</think> reasoning blocks (glm-z1 and other reasoning models)
   let text = value.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
@@ -194,6 +217,15 @@ function fixBackslashes(value: string): string {
   // Fix unescaped backslashes in JSON string values (e.g. LaTeX `\ ` or `\text`)
   // Valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
   return value.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
+}
+
+function fixLatexCommandsInJson(value: string): string {
+  // Protect common LaTeX commands whose leading characters are valid JSON escapes,
+  // such as \frac, \theta, \text, \times, \beta, \nu, \rho.
+  return value.replace(
+    /(?<!\\)\\(frac|text|theta|times|tau|tan|beta|boxed|begin|end|nu|rho|neq|nabla|cdots|ldots)\b/g,
+    "\\\\$1"
+  );
 }
 
 function escapeControlCharsInJsonStrings(value: string) {
@@ -258,10 +290,11 @@ function parseJson<TSchema extends z.ZodTypeAny>(
   let normalized = escapeControlCharsInJsonStrings(cleaned);
 
   try {
+    normalized = fixLatexCommandsInJson(normalized);
     parsed = JSON.parse(normalized);
   } catch (initialError) {
     // Retry after fixing unescaped backslashes (common with LaTeX in LLM output)
-    normalized = fixBackslashes(normalized);
+    normalized = fixLatexCommandsInJson(fixBackslashes(normalized));
 
     try {
       parsed = JSON.parse(normalized);
@@ -321,6 +354,41 @@ function normalizeChoiceOption(option: string, optionIndex: number) {
     .trim()
     .replace(new RegExp(`^${optionLetter}\\s*[.．、:：)）-]\\s*`, "i"), "")
     .trim();
+}
+
+function normalizeMathString(value: string) {
+  return value
+    .replace(/\u000crac\b/g, "\\frac")
+    .replace(/\u0008eta\b/g, "\\beta")
+    .replace(/\u0009heta\b/g, "\\theta")
+    .replace(/\u0009ext\b/g, "\\text")
+    .replace(/\u0009imes\b/g, "\\times")
+    .replace(/\u0009au\b/g, "\\tau")
+    .replace(/\u0009an\b/g, "\\tan")
+    .replace(/\u000au\b/g, "\\nu")
+    .replace(/\u000dho\b/g, "\\rho")
+    .trim();
+}
+
+function stripChoiceOptionsFromContent(content: string) {
+  const matches = Array.from(content.matchAll(/\b([A-D])\s*[.．、:：)）-]\s*/g));
+
+  if (matches.length < 4) {
+    return content.trim();
+  }
+
+  const firstFourLabels = matches.slice(0, 4).map((match) => match[1].toUpperCase()).join("");
+  if (firstFourLabels !== "ABCD") {
+    return content.trim();
+  }
+
+  const firstOptionIndex = matches[0].index;
+  if (typeof firstOptionIndex !== "number" || firstOptionIndex <= 0) {
+    return content.trim();
+  }
+
+  const stripped = content.slice(0, firstOptionIndex).trim().replace(/[：:;；，,\s]+$/u, "").trim();
+  return stripped || content.trim();
 }
 
 function mergeQualityFlags(
@@ -404,21 +472,32 @@ function buildLocalQualityFlags(question: RawQuestion): QualityFlag[] | undefine
 
 function normalizeModelQuestion(question: ModelQuestion): RawQuestion {
   const answerCandidates = Array.isArray(question.answer)
-    ? toUniqueTrimmedStrings(question.answer)
-    : [question.answer.trim()];
+    ? toUniqueTrimmedStrings(question.answer.map(normalizeMathString))
+    : [normalizeMathString(question.answer)];
   const acceptedAnswers = toUniqueTrimmedStrings([
-    ...(question.acceptedAnswers ?? []),
+    ...(question.acceptedAnswers ?? []).map(normalizeMathString),
     ...answerCandidates.slice(1),
   ]);
   const normalizedOptions = question.options?.map((option, optionIndex) =>
-    normalizeChoiceOption(option, optionIndex)
+    normalizeMathString(normalizeChoiceOption(option, optionIndex))
   );
+  const normalizedContent =
+    normalizeMathString(
+      question.type === "choice"
+        ? stripChoiceOptionsFromContent(question.content)
+        : question.content.trim()
+    );
+  const normalizedExplanation = question.explanation
+    ? normalizeMathString(question.explanation)
+    : question.explanation;
 
   return rawQuestionSchema.parse({
     ...question,
+    content: normalizedContent,
     options: normalizedOptions,
     answer: answerCandidates[0],
     acceptedAnswers: acceptedAnswers.length > 0 ? acceptedAnswers : undefined,
+    explanation: normalizedExplanation,
   });
 }
 
@@ -436,54 +515,93 @@ async function runGenerateQuestionsStep(
   mastra: WorkflowMastra
 ) {
   const agent = mastra.getAgent<{
+    generate(
+      input: { messages: Array<{ role: "user"; content: string }> },
+      options?: {
+        structuredOutput?: {
+          schema: unknown;
+        };
+        maxSteps?: number;
+      }
+    ): Promise<unknown>;
     generateLegacy(messages: Array<{ role: "user"; content: string }>): Promise<unknown>;
   }>("questionGenerator");
 
-  const response = await agent.generateLegacy([{ role: "user", content: prompt }]);
-  const rawText = extractAgentText(response);
-  console.log("[questionGenerator] raw response:", truncateForLog(rawText));
-
+  const structuredSchema = z.array(modelQuestionSchema).min(1);
   let generatedQuestions: ModelQuestion[];
 
   try {
-    generatedQuestions = parseJson(
-      rawText,
-      z.array(modelQuestionSchema).min(1),
-      "questionGenerator 返回的题目 JSON 解析失败",
-      "questionGenerator"
-    );
-  } catch (error) {
-    console.warn("[questionGenerator] falling back to json repair");
-
-    const repairAgent = mastra.getAgent<{
-      generateLegacy(messages: Array<{ role: "user"; content: string }>): Promise<unknown>;
-    }>("jsonRepair");
-
-    const repairResponse = await repairAgent.generateLegacy([
+    const structuredResponse = await agent.generate(
+      { messages: [{ role: "user", content: prompt }] },
       {
-        role: "user",
-        content: [
-          "请将下面这段内容修复为合法 JSON 数组，只返回修复后的 JSON。",
-          "要求：",
-          "1. 保留原有题目信息，不要补充解释性文字。",
-          "2. 如果字符串中有真实换行、制表符或非法反斜杠，请改成合法 JSON 转义。",
-          "3. 如果选择题 options 自带 A./B./C./D. 前缀可以保留，后续系统会清洗。",
-          "4. 如果某题字段明显缺失，不要编造新信息，只尽量保持原样并输出合法 JSON。",
-          "待修复内容：",
-          cleanJsonString(rawText),
-        ].join("\n"),
-      },
-    ]);
-
-    const repairedText = extractAgentText(repairResponse);
-    console.log("[jsonRepair] repaired response:", truncateForLog(repairedText));
-
-    generatedQuestions = parseJson(
-      repairedText,
-      z.array(modelQuestionSchema).min(1),
-      error instanceof Error ? error.message : "questionGenerator 返回的题目 JSON 解析失败",
-      "jsonRepair"
+        structuredOutput: {
+          schema: structuredSchema,
+        },
+        maxSteps: 1,
+      }
     );
+    const structuredObject = await extractStructuredObject<unknown>(structuredResponse);
+    const structuredResult = structuredSchema.safeParse(structuredObject);
+
+    if (!structuredResult.success) {
+      console.warn("[questionGenerator] structured output validation failed", {
+        issues: structuredResult.error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+          code: issue.code,
+        })),
+      });
+      throw new Error("questionGenerator structured output validation failed");
+    }
+
+    generatedQuestions = structuredResult.data;
+  } catch (error) {
+    console.warn("[questionGenerator] falling back to text json parsing");
+
+    const response = await agent.generateLegacy([{ role: "user", content: prompt }]);
+    const rawText = extractAgentText(response);
+    console.log("[questionGenerator] raw response:", truncateForLog(rawText));
+
+    try {
+      generatedQuestions = parseJson(
+        rawText,
+        structuredSchema,
+        "questionGenerator 返回的题目 JSON 解析失败",
+        "questionGenerator"
+      );
+    } catch (parseError) {
+      console.warn("[questionGenerator] falling back to json repair");
+
+      const repairAgent = mastra.getAgent<{
+        generateLegacy(messages: Array<{ role: "user"; content: string }>): Promise<unknown>;
+      }>("jsonRepair");
+
+      const repairResponse = await repairAgent.generateLegacy([
+        {
+          role: "user",
+          content: [
+            "请将下面这段内容修复为合法 JSON 数组，只返回修复后的 JSON。",
+            "要求：",
+            "1. 保留原有题目信息，不要补充解释性文字。",
+            "2. 如果字符串中有真实换行、制表符或非法反斜杠，请改成合法 JSON 转义。",
+            "3. 如果选择题 options 自带 A./B./C./D. 前缀可以保留，后续系统会清洗。",
+            "4. 如果某题字段明显缺失，不要编造新信息，只尽量保持原样并输出合法 JSON。",
+            "待修复内容：",
+            cleanJsonString(rawText),
+          ].join("\n"),
+        },
+      ]);
+
+      const repairedText = extractAgentText(repairResponse);
+      console.log("[jsonRepair] repaired response:", truncateForLog(repairedText));
+
+      generatedQuestions = parseJson(
+        repairedText,
+        structuredSchema,
+        parseError instanceof Error ? parseError.message : "questionGenerator 返回的题目 JSON 解析失败",
+        "jsonRepair"
+      );
+    }
   }
 
   const questions = generatedQuestions.map((question) => {
@@ -499,6 +617,82 @@ async function runGenerateQuestionsStep(
   });
 
   return generateQuestionsOutputSchema.parse({ questions });
+}
+
+async function runFillMissingExplanationsStep(questions: RawQuestion[], mastra: WorkflowMastra) {
+  const missingIndexes = questions
+    .map((question, index) => ({ question, index }))
+    .filter(({ question }) => !question.explanation?.trim())
+    .map(({ index }) => index);
+
+  if (missingIndexes.length === 0) {
+    return questions;
+  }
+
+  const agent = mastra.getAgent<{
+    generate(
+      input: { messages: Array<{ role: "user"; content: string }> },
+      options?: {
+        structuredOutput?: {
+          schema: unknown;
+        };
+        maxSteps?: number;
+      }
+    ): Promise<unknown>;
+    generateLegacy(messages: Array<{ role: "user"; content: string }>): Promise<unknown>;
+  }>("explanationGenerator");
+
+  const patchSchema = z.array(explanationPatchSchema);
+  let patches: Array<z.infer<typeof explanationPatchSchema>>;
+
+  const prompt = [
+    "请只为 explanation 为空的题目补写解析，返回严格 JSON 数组，不要输出任何额外内容。",
+    "要求：",
+    "1. 只返回需要补写的题目，格式为 [{\"questionIndex\":0,\"explanation\":\"...\"}]。",
+    "2. explanation 必须简短但完整，说明核心公式、判断依据或关键推导。",
+    "3. 不要修改题干、答案、选项、知识点、难度或分值。",
+    "4. 不要输出 markdown 代码块。",
+    `待补写题号索引：${missingIndexes.join(", ")}`,
+    `题目 JSON：${JSON.stringify(questions)}`,
+  ].join("\n");
+
+  try {
+    const response = await agent.generate(
+      { messages: [{ role: "user", content: prompt }] },
+      {
+        structuredOutput: {
+          schema: patchSchema,
+        },
+        maxSteps: 1,
+      }
+    );
+
+    const object = await extractStructuredObject<unknown>(response);
+    const result = patchSchema.safeParse(object);
+    if (!result.success) {
+      throw new Error("explanationGenerator structured output validation failed");
+    }
+    patches = result.data;
+  } catch {
+    const response = await agent.generateLegacy([{ role: "user", content: prompt }]);
+    patches = parseJson(
+      extractAgentText(response),
+      patchSchema,
+      "补写题目解析失败",
+      "explanationGenerator"
+    );
+  }
+
+  const patchMap = new Map(
+    patches
+      .filter((patch) => missingIndexes.includes(patch.questionIndex))
+      .map((patch) => [patch.questionIndex, patch.explanation.trim()])
+  );
+
+  return questions.map((question, index) => ({
+    ...question,
+    explanation: question.explanation?.trim() || patchMap.get(index) || question.explanation,
+  }));
 }
 
 async function runQualityCheckStep(
@@ -631,6 +825,19 @@ export async function runGenerateExamWorkflow(options: {
     agents: {
       questionGenerator: createQuestionGeneratorAgent(options.env),
       qualityChecker: createQualityCheckerAgent(options.env),
+      explanationGenerator: new Agent({
+        name: "explanationGenerator",
+        description: "为缺少解析的题目补写 explanation。",
+        model: createQualityCheckerModel(options.env),
+        instructions: `
+你是一位高中物理教师。
+
+你的唯一任务是为用户提供的题目补写 explanation 字段。
+不要改写其他字段，不要输出中间推理，不要输出 markdown 代码块。
+如果用户要求返回 JSON 数组，就只返回 JSON 数组。
+解析必须简短但完整，说明核心公式、判断依据或关键推导。
+        `.trim(),
+      }),
       jsonRepair: new Agent({
         name: "jsonRepair",
         description: "将接近 JSON 的模型输出修复为合法 JSON。",
@@ -651,10 +858,11 @@ export async function runGenerateExamWorkflow(options: {
   await options.onEvent?.({ event: "step", step: "parse-requirements", status: "done" });
 
   const generated = await runGenerateQuestionsStep(parsed.prompt, mastra);
+  const explainedQuestions = await runFillMissingExplanationsStep(generated.questions, mastra);
   await options.onEvent?.({ event: "step", step: "generate-questions", status: "done" });
-  await options.onEvent?.({ event: "questions", data: generated.questions });
+  await options.onEvent?.({ event: "questions", data: explainedQuestions });
 
-  const reviewed = await runQualityCheckStep(generated.questions, mastra);
+  const reviewed = await runQualityCheckStep(explainedQuestions, mastra);
   await options.onEvent?.({ event: "step", step: "quality-check", status: "done" });
 
   const saved = await runSaveDraftStep(
