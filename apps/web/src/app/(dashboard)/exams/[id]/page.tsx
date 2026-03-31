@@ -69,6 +69,22 @@ const defaultManualQuestionForm: ManualQuestionForm = {
   difficulty: 3,
 };
 
+function formatDateTimeLocalValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function getDefaultDeadlineValue() {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 1);
+  return formatDateTimeLocalValue(date);
+}
+
 function buildEditableQuestion(question: Question): EditableQuestion {
   return {
     content: question.content,
@@ -117,8 +133,10 @@ export default function ExamReviewPage() {
       setClasses(classData);
       setTitleDraft(examData.title);
       setPublishForm({
-        classId: examData.classId,
-        deadline: examData.deadline ? examData.deadline.slice(0, 16) : "",
+        classId: examData.classId ?? "",
+        deadline: examData.deadline
+          ? formatDateTimeLocalValue(new Date(examData.deadline))
+          : getDefaultDeadlineValue(),
       });
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "试卷加载失败");
@@ -135,6 +153,17 @@ export default function ExamReviewPage() {
   const totalScore = useMemo(() => calculateTotalScore(questions), [questions]);
   const typeDistribution = useMemo(() => countByQuestionType(questions), [questions]);
   const difficultyDistribution = useMemo(() => countByDifficulty(questions), [questions]);
+
+  useEffect(() => {
+    if (!publishOpen) {
+      return;
+    }
+
+    setPublishForm((current) => ({
+      classId: current.classId || exam?.classId || classes[0]?.id || "",
+      deadline: current.deadline || getDefaultDeadlineValue(),
+    }));
+  }, [publishOpen, exam?.classId, classes]);
 
   async function updateExam(payload: Record<string, unknown>) {
     const updated = await fetchJson<ExamWithQuestions>(`/api/exams/${examId}`, {
