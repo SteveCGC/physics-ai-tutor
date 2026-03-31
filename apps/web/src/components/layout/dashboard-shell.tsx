@@ -61,7 +61,7 @@ export function DashboardShell({
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-danger focus:text-danger">
-                  在侧边栏中登出
+                  退出登录
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
